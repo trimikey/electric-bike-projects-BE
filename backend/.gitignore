@@ -3,6 +3,7 @@ node_modules/
 
 # Env files
 .env
+*.json
 
 # Firebase/Google secrets
 config/serviceAccountKeys.js
