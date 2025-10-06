@@ -10,7 +10,9 @@ const AuditLog = sequelize.define("AuditLog", {
   payload: { type: DataTypes.JSON }
 }, {
   tableName: "audit_logs",
-  timestamps: true
+  timestamps: true,
+  createdAt: "created_at",
+  updatedAt: "updated_at",
 });
 
 module.exports = AuditLog;

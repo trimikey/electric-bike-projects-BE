@@ -11,7 +11,9 @@ const Payment = sequelize.define("Payment", {
   paid_at: { type: DataTypes.DATE }
 }, {
   tableName: "payments",
-  timestamps: true
+  timestamps: true,
+  createdAt: "created_at",
+  updatedAt: "updated_at",
 });
 
 module.exports = Payment;

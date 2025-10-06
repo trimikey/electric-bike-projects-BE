@@ -12,6 +12,8 @@ const VehicleModel = sequelize.define("VehicleModel", {
 }, {
   tableName: "vehicle_models",
   timestamps: true,
+  createdAt: "created_at",
+  updatedAt: "updated_at",
 });
 
 module.exports = VehicleModel;

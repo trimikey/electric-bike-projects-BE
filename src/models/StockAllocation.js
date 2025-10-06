@@ -10,7 +10,9 @@ const StockAllocation = sequelize.define("StockAllocation", {
   status: { type: DataTypes.ENUM("allocated","shipped","received") }
 }, {
   tableName: "stock_allocations",
-  timestamps: true
+  timestamps: true,
+  createdAt: "created_at",
+  updatedAt: "updated_at",
 });
 
 module.exports = StockAllocation;

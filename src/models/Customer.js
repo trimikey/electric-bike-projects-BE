@@ -11,7 +11,9 @@ const Customer = sequelize.define("Customer", {
   preferred_contact: { type: DataTypes.STRING(50) }
 }, {
   tableName: "customers",
-  timestamps: true
+  timestamps: true,
+  createdAt: "created_at",
+  updatedAt: "updated_at",
 });
 
 module.exports = Customer;

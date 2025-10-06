@@ -26,6 +26,8 @@ const VehicleInventory = sequelize.define("VehicleInventory", {
 }, {
   tableName: "vehicles_inventory",
   timestamps: true,
+  createdAt: "created_at",
+  updatedAt: "updated_at",
 });
 
 // Associations
