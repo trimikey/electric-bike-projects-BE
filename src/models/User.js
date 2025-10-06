@@ -44,7 +44,8 @@ const User = sequelize.define("User", {
   tableName: "users",
   timestamps: true,       // createdAt, updatedAt
   paranoid: true,         // bật soft delete => Sequelize sẽ dùng deletedAt
-  deletedAt: "deleted_at" // map đúng với schema SQL
+  createdAt: "created_at",  // ánh xạ đúng cột DB
+  updatedAt: "updated_at",  // ánh xạ đúng cột DB
 });
 
 module.exports = User;

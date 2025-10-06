@@ -2,6 +2,10 @@ const express = require("express");
 const router = express.Router();
 const UserController = require("../controllers/user.controller");
 
+// Authentication middleware
+const auth = require("../middlewares/auth.middleware");
+
+
 // CRUD routes
 router.get("/", UserController.getAll);
 router.get("/:id", UserController.getById);

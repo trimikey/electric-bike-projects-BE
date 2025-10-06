@@ -11,7 +11,9 @@ const Quote = sequelize.define("Quote", {
   status: { type: DataTypes.ENUM("draft","sent","accepted","rejected","expired") }
 }, {
   tableName: "quotes",
-  timestamps: true
+  timestamps: true,
+  createdAt: "created_at",
+  updatedAt: "updated_at",
 });
 
 module.exports = Quote;
