@@ -9,7 +9,6 @@ const Order = require("./Order");
 const OrderItem = require("./OrderItem");
 const Payment = require("./Payment");
 const StockAllocation = require("./StockAllocation");
-const AuditLog = require("./AuditLog");
 
 // Dealer relationships
 Dealer.hasMany(User, { foreignKey: "dealer_id" });
@@ -48,9 +47,6 @@ Payment.belongsTo(Order, { foreignKey: "order_id" });
 // Stock allocation
 StockAllocation.belongsTo(VehicleInventory, { foreignKey: "vehicle_inventory_id" });
 
-// Audit logs
-AuditLog.belongsTo(User, { foreignKey: "performed_by" });
-
 module.exports = {
   Dealer,
   User,
@@ -63,5 +59,4 @@ module.exports = {
   OrderItem,
   Payment,
   StockAllocation,
-  AuditLog
 };
