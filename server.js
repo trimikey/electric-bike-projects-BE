@@ -46,7 +46,6 @@ const orderRoutes = require("./src/routes/order.routes");
 const orderItemRoutes = require("./src/routes/orderItem.routes");
 const paymentRoutes = require("./src/routes/payment.routes");
 const stockAllocationRoutes = require("./src/routes/stockAllocation.routes");
-const auditLogRoutes = require("./src/routes/auditLog.routes");
 
 
 // Use routes
@@ -62,7 +61,6 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/order-items", orderItemRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/stock-allocations", stockAllocationRoutes);
-app.use("/api/audit-logs", auditLogRoutes);
 
 
 
@@ -75,7 +73,6 @@ sequelize.authenticate()
   .catch((err) => console.error("❌ DB error:", err));
 
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-
 
 
 
