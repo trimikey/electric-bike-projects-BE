@@ -1,12 +1,15 @@
-const jwt = require("jsonwebtoken");
+const { verify } = require("../utils/jwt");
 
 module.exports = (roles = []) => {
   return (req, res, next) => {
     try {
-      const token = req.headers["authorization"]?.split(" ")[1];
-      if (!token) return res.status(401).json({ error: "No token provided" });
+      const authHeader = req.headers.authorization || "";
+      const token = authHeader.split(" ")[1];
+      if (!token) {
+        return res.status(401).json({ error: "No token provided" });
+      }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = verify(token);
       req.user = decoded;
 
       if (roles.length && !roles.includes(decoded.role)) {
