@@ -1,0 +1,16 @@
+# Node modules
+node_modules/
+
+# Env files
+.env
+*.json
+
+# Firebase/Google secrets
+config/serviceAccountKeys.js
+# Ignore service account and external folder
+../serviceAccountKey.json
+../test_windows_app/
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
