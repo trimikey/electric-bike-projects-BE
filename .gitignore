@@ -1,2 +1,9 @@
 # Ignore installed dependencies
 node_modules/
+
+# Environment and secrets
+.env
+*.env
+*.service-account.json
+*-firebase-adminsdk-*.json
+.DS_Store

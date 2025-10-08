@@ -13,3 +13,4 @@ exports.sign = (payload, options = { expiresIn: "1d" }) =>
   jwt.sign(payload, SECRET, options);
 
 exports.verify = (token) => jwt.verify(token, SECRET);
+  

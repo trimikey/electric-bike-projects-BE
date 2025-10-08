@@ -73,3 +73,52 @@ paths:
           description: Invalid credentials
         500:
           description: Server error
+
+  /auth/customers/google:
+    post:
+      summary: Login/Register with Google
+      tags: [Auth]
+      description: Đăng nhập hoặc đăng ký Customer bằng tài khoản Google
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                idToken:
+                  type: string
+                  description: Google ID Token từ frontend
+                  example: eyJhbGciOiJSUzI1NiIsImtpZCI6IjE3ZjBmMGYxNGU5...
+              required: [idToken]
+      responses:
+        200:
+          description: Login thành công
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: Google login thành công
+                  customer:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: b6f3c891-3d45-4cc7-823f-01bce4f7bfe8
+                      email:
+                        type: string
+                        example: test@gmail.com
+                      full_name:
+                        type: string
+                        example: Swagger User
+                  token:
+                    type: string
+                    description: JWT nội bộ trả về
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        400:
+          description: Thiếu token hoặc token không hợp lệ
+        500:
+          description: Lỗi xác thực Google

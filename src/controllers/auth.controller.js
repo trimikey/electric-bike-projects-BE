@@ -15,7 +15,9 @@ exports.register = async (req, res) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
-      errors: errors.array().map((err) => ({ field: err.param, message: err.msg })),
+      errors: errors
+        .array()
+        .map((err) => ({ field: err.param, message: err.msg })),
     });
   }
 
@@ -44,7 +46,9 @@ exports.login = async (req, res) => {
   if (!errors.isEmpty()) {
     return res.status(400).json({
       success: false,
-      errors: errors.array().map((err) => ({ field: err.param, message: err.msg })),
+      errors: errors
+        .array()
+        .map((err) => ({ field: err.param, message: err.msg })),
     });
   }
 
@@ -97,28 +101,60 @@ exports.loginCustomer = async (req, res) => {
 
 exports.googleLoginCustomer = async (req, res) => {
   const { idToken } = req.body;
+
   try {
+    console.log("🔥 [Google Login] Request received");
+    console.log("🧩 Received idToken:", idToken ? idToken.slice(0, 20) + "..." : "(none)");
+
     if (!idToken) {
+      console.warn("⚠️ Missing idToken");
       return res.status(400).json({ message: "Thiếu idToken" });
     }
 
-    const decoded = await admin.auth().verifyIdToken(idToken);
-    const { email, name } = decoded;
+    let decoded;
+
+    // ⚙️ Mock mode cho Swagger (chỉ khi token = "test-token")
+    // if (idToken === "test-token") {
+      // console.log("⚙️ Mock mode (Swagger testing) activated");
+      // decoded = { email: "test@gmail.com", name: "Swagger User" };
+    // } else {
+      console.log("🧠 Verifying idToken with Firebase...");
+      console.log("✅ Verify success:", decoded);
+      decoded = await admin.auth().verifyIdToken(idToken);
+      console.log("✅ [Google Verify Result]", {
+        uid: decoded.uid,
+        email: decoded.email,
+        name: decoded.name,
+        iss: decoded.iss,
+      });
+    // }
+
+    const { email, name } = decoded || {};
+    if (!email) {
+      console.warn("❌ Missing email in decoded token");
+      return res.status(400).json({ message: "Token không chứa email hợp lệ" });
+    }
+
+    console.log("💾 Upserting customer:", email, name);
 
     const payload = await authService.upsertGoogleCustomer({ email, name });
-    res.json({
+    console.log("✅ Customer upserted:", payload.customer.email);
+
+    return res.json({
       message: "Google login thành công",
       customer: authService.buildCustomerPayload(payload.customer),
       token: payload.token,
     });
   } catch (error) {
-    console.error("Firebase verify failed", error);
-    res.status(500).json({
+    console.error("🔥 Firebase verify failed:", error.message);
+    
+    return res.status(500).json({
       error: "Google login failed",
-      details: error.message || "Unknown",
+      details: error.message || "Unknown error",
     });
   }
 };
+
 
 exports.logout = (_req, res) => {
   res.json({ message: "Đăng xuất thành công" });
