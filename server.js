@@ -1,17 +1,51 @@
 require("dotenv").config();
+
 const express = require("express");
 const cors = require("cors");
-  const { sequelize, Role } = require("./models");
+const path = require("path");
+const swaggerUi = require("swagger-ui-express");
+const YAML = require("yamljs");
+require("./models/associations");
+const { sequelize, Role } = require("./models");
 const authRoutes = require("./routes/auth.routes");
+const userRoutes = require("./routes/user.routes");
 const errorHandler = require("./middlewares/error.middleware");
 
 
+    
+
 const app = express();
-app.use(cors());
+// ✅ Cấu hình CORS chi tiết
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization, Accept");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
+app.use(cors()); // đảm bảo các request thường cũng có CORS
+app.options(/(.*)/, cors()); // preflight
 app.use(express.json());
 
 
+// Swagger setup
+const swaggerPath = path.join(__dirname, "swagger.yaml"); 
+console.log("📄 Loading Swagger from:", swaggerPath);
+
+const swaggerDocument = YAML.load(swaggerPath);
+console.log("✅ Swagger loaded:", !!swaggerDocument);
+
+app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.get("/docs.json", (req, res) => {
+  res.json(swaggerDocument);
+});
+
+
+
+// Routes
 app.use("/auth", authRoutes);
+app.use("/users", userRoutes);
 app.use(errorHandler);
 
 

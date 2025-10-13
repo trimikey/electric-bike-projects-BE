@@ -3,36 +3,37 @@ const jwt = require("jsonwebtoken");
 const admin = require("../config/firebase");
 const { v4: uuidv4 } = require("uuid");
 const Customer = require("../models/Customer");
+const generateToken = require("../utils/jwt").generateToken;
+const { User, Role } = require("../models/associations");
 
-// ---------------- REGISTER CUSTOMER ----------------
+
+// ✅ Đăng ký Customer
 exports.registerCustomer = async (req, res) => {
-  try {
-    const { full_name, email, phone, password, address, dob } = req.body;
+  const { name, email, password, phone } = req.body;
 
-    // Check duplicate
-    const existed = await Customer.findOne({ where: { email } });
-    if (existed) return res.status(400).json({ message: "Email already registered" });
+  const hashed = await bcrypt.hash(password, 10);
+  const customerRole = await Role.findOne({ where: { name: "Customer" } }); // 👈 lấy role theo name
 
-    // Hash password (lưu tạm trong cột riêng nếu bạn có cột password_hash)
-    const hash = await bcrypt.hash(password, 10);
+  const user = await User.create({
+    id: uuidv4(),
+    name,
+    email,
+    phone,
+    password: hashed,
+    role_id: customerRole.id, // vẫn FK
+  });
 
-    const newCustomer = await Customer.create({
-      id: uuidv4(),
-      full_name,
-      email,
-      phone,
-      address,
-      dob,
-      password_hash: hash,
-    });
+  const token = generateToken({
+    id: user.id,
+    email: user.email,
+    role_name: customerRole.name, // 👈 gửi role_name vào token
+  });
 
-    res.status(201).json({
-      message: "Đăng ký thành công",
-      customer: { id: newCustomer.id, full_name, email, phone },
-    });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  res.status(201).json({
+    message: "Đăng ký thành công",
+    user: { id: user.id, name: user.name, email: user.email, role_name: customerRole.name },
+    token,
+  });
 };
 
 // ---------------- LOGIN CUSTOMER ----------------
@@ -115,3 +116,18 @@ exports.googleLoginCustomer = async (req, res) => {
 exports.logout = (req, res) => {
   res.json({ message: "Đăng xuất thành công" });
 };
+
+
+// ---------------- GET PROFILE ----------------
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findByPk(req.user.id, {
+      include: { model: Role, as: "role" },
+    });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
