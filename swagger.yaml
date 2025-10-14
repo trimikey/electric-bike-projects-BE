@@ -15,6 +15,8 @@ tags:
     description: Authentication endpoints for customers
   - name: Users Management
     description: Admin and EVM Staff endpoints to manage internal users
+  - name: Vehicle Catalog
+    description: Manage vehicle models, variants and specs
 
 paths:
   ##########################################################
@@ -237,6 +239,295 @@ paths:
           description: Forbidden
         "404":
           description: User not found
+
+  ##########################################################
+  #             VEHICLE MODELS & VARIANTS
+  ##########################################################
+  /vehicles/models:
+    get:
+      tags:
+        - Vehicle Catalog
+      summary: List all vehicle models with variants and specs
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      x-codeSamples:
+        - lang: curl
+          label: cURL
+          source: |
+            curl -X GET "http://localhost:3000/vehicles/models" \
+              -H "Authorization: Bearer <token>"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VehicleModelDetail"
+              example:
+                - id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+                  name: "E-Bike S1"
+                  description: "Entry level city e-bike for daily commute"
+                  createdAt: "2024-09-10T08:30:15.000Z"
+                  variants:
+                    - id: "e2b3c4d5-e6f7-8901-bc23-d4e5f6a78901"
+                      model_id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+                      version: "Standard"
+                      color: "Matte Black"
+                      base_price: 1990.0
+                      createdAt: "2024-09-11T03:45:00.000Z"
+                    - id: "a7b8c9d0-e1f2-3456-7890-ab12c3d4e5f6"
+                      model_id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+                      version: "Premium"
+                      color: "Moonlight Silver"
+                      base_price: 2599.99
+                      createdAt: "2024-09-12T09:10:00.000Z"
+                  specs:
+                    - id: "0f1e2d3c-4b5a-6978-9012-abcd3456ef78"
+                      model_id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+                      spec_id: "12345678-90ab-cdef-1234-567890abcdef"
+                      value: "120 km"
+                      spec:
+                        id: "12345678-90ab-cdef-1234-567890abcdef"
+                        category: "Performance"
+                        name: "Range"
+                        unit: "km"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Server error
+
+    post:
+      tags:
+        - Vehicle Catalog
+      summary: Create a new vehicle model
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      x-codeSamples:
+        - lang: curl
+          label: cURL
+          source: |
+            curl -X POST "http://localhost:3000/vehicles/models" \
+              -H "Authorization: Bearer <token>" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "name": "E-Bike S1",
+                "description": "Entry level city e-bike for daily commute"
+              }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleModelCreateRequest"
+            example:
+              name: "E-Bike S1"
+              description: "Entry level city e-bike for daily commute"
+      responses:
+        "201":
+          description: Vehicle model created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleModelResponse"
+              example:
+                message: "Tạo vehicle model thành công"
+                model:
+                  id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+                  name: "E-Bike S1"
+                  description: "Entry level city e-bike for daily commute"
+                  createdAt: "2024-09-10T08:30:15.000Z"
+        "400":
+          description: Invalid input or duplicate model name
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Server error
+
+  /vehicles/variants:
+    get:
+      tags:
+        - Vehicle Catalog
+      summary: List all vehicle variants
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      x-codeSamples:
+        - lang: curl
+          label: cURL
+          source: |
+            curl -X GET "http://localhost:3000/vehicles/variants" \
+              -H "Authorization: Bearer <token>"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VehicleVariantDetail"
+              example:
+                - id: "e2b3c4d5-e6f7-8901-bc23-d4e5f6a78901"
+                  model_id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+                  version: "Standard"
+                  color: "Matte Black"
+                  base_price: 1990.0
+                  createdAt: "2024-09-11T03:45:00.000Z"
+                  model:
+                    id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+                    name: "E-Bike S1"
+                    description: "Entry level city e-bike for daily commute"
+                    createdAt: "2024-09-10T08:30:15.000Z"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Server error
+
+    post:
+      tags:
+        - Vehicle Catalog
+      summary: Create a new vehicle variant
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      x-codeSamples:
+        - lang: curl
+          label: cURL
+          source: |
+            curl -X POST "http://localhost:3000/vehicles/variants" \
+              -H "Authorization: Bearer <token>" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "model_id": "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890",
+                "version": "Premium",
+                "color": "Moonlight Silver",
+                "base_price": 2599.99
+              }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleVariantCreateRequest"
+            example:
+              model_id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+              version: "Premium"
+              color: "Moonlight Silver"
+              base_price: 2599.99
+      responses:
+        "201":
+          description: Vehicle variant created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleVariantResponse"
+              example:
+                message: "Tạo variant thành công"
+                variant:
+                  id: "a7b8c9d0-e1f2-3456-7890-ab12c3d4e5f6"
+                  model_id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+                  version: "Premium"
+                  color: "Moonlight Silver"
+                  base_price: 2599.99
+                  createdAt: "2024-09-12T09:10:00.000Z"
+        "400":
+          description: Invalid input or variant already exists
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Vehicle model not found
+        "500":
+          description: Server error
+
+  /vehicles/model-specs:
+    post:
+      tags:
+        - Vehicle Catalog
+      summary: Attach or update a specification value for a model
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      x-codeSamples:
+        - lang: curl
+          label: cURL
+          source: |
+            curl -X POST "http://localhost:3000/vehicles/model-specs" \
+              -H "Authorization: Bearer <token>" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "model_id": "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890",
+                "spec_id": "12345678-90ab-cdef-1234-567890abcdef",
+                "value": "120 km"
+              }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleModelSpecAttachRequest"
+            example:
+              model_id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+              spec_id: "12345678-90ab-cdef-1234-567890abcdef"
+              value: "120 km"
+      responses:
+        "201":
+          description: Spec attached successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleModelSpecResponse"
+              example:
+                message: "Gắn spec cho model thành công"
+                vehicleModelSpec:
+                  id: "0f1e2d3c-4b5a-6978-9012-abcd3456ef78"
+                  model_id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+                  spec_id: "12345678-90ab-cdef-1234-567890abcdef"
+                  value: "120 km"
+                  spec:
+                    id: "12345678-90ab-cdef-1234-567890abcdef"
+                    category: "Performance"
+                    name: "Range"
+                    unit: "km"
+        "200":
+          description: Spec value updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleModelSpecResponse"
+              example:
+                message: "Cập nhật giá trị spec thành công"
+                vehicleModelSpec:
+                  id: "0f1e2d3c-4b5a-6978-9012-abcd3456ef78"
+                  model_id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+                  spec_id: "12345678-90ab-cdef-1234-567890abcdef"
+                  value: "150 km"
+                  spec:
+                    id: "12345678-90ab-cdef-1234-567890abcdef"
+                    category: "Performance"
+                    name: "Range"
+                    unit: "km"
+        "400":
+          description: Invalid input
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Model or spec not found
+        "500":
+          description: Server error
 
 components:
   securitySchemes:
