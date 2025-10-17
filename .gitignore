@@ -4,6 +4,8 @@ node_modules/
 # Env files
 .env
 *.json
+!package.json
+!package-lock.json
 
 # Firebase/Google secrets
 config/serviceAccountKeys.js
