@@ -9,31 +9,50 @@ const { User, Role } = require("../models/associations");
 
 // ✅ Đăng ký Customer
 exports.registerCustomer = async (req, res) => {
-  const { name, email, password, phone } = req.body;
+  try {
+    const { full_name, email, password, phone, address, dob } = req.body;
 
-  const hashed = await bcrypt.hash(password, 10);
-  const customerRole = await Role.findOne({ where: { name: "Customer" } }); // 👈 lấy role theo name
+    if (!full_name || !email || !password) {
+      return res.status(400).json({ message: "full_name, email và password là bắt buộc" });
+    }
 
-  const user = await User.create({
-    id: uuidv4(),
-    name,
-    email,
-    phone,
-    password: hashed,
-    role_id: customerRole.id, // vẫn FK
-  });
+    const existed = await Customer.findOne({ where: { email } });
+    if (existed) {
+      return res.status(400).json({ message: "Email đã được đăng ký" });
+    }
 
-  const token = generateToken({
-    id: user.id,
-    email: user.email,
-    role_name: customerRole.name, // 👈 gửi role_name vào token
-  });
+    const hashed = await bcrypt.hash(password, 10);
+    const customer = await Customer.create({
+      id: uuidv4(),
+      full_name,
+      email,
+      phone: phone || null,
+      password_hash: hashed,
+      address: address || null,
+      dob: dob ? new Date(dob) : null,
+    });
 
-  res.status(201).json({
-    message: "Đăng ký thành công",
-    user: { id: user.id, name: user.name, email: user.email, role_name: customerRole.name },
-    token,
-  });
+    const token = generateToken({
+      id: customer.id,
+      email: customer.email,
+      role_name: "Customer",
+    });
+
+    res.status(201).json({
+      message: "Đăng ký thành công",
+      customer: {
+        id: customer.id,
+        full_name: customer.full_name,
+        email: customer.email,
+        phone: customer.phone,
+        address: customer.address,
+        dob: customer.dob,
+      },
+      token,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
 // ---------------- LOGIN CUSTOMER ----------------

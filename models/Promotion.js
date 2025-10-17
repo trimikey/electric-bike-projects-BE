@@ -8,6 +8,5 @@ description: { type: DataTypes.TEXT },
 discount_percent: { type: DataTypes.DECIMAL(5, 2) },
 start_date: { type: DataTypes.DATEONLY },
 end_date: { type: DataTypes.DATEONLY },
-created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });
 module.exports = Promotion;

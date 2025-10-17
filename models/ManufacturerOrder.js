@@ -7,6 +7,5 @@ created_by: { type: DataTypes.CHAR(36), allowNull: false },
 status: { type: DataTypes.ENUM("pending", "confirmed", "shipped", "completed", "cancelled"), defaultValue: "pending" },
 expected_delivery: { type: DataTypes.DATEONLY },
 notes: { type: DataTypes.TEXT },
-created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });
 module.exports = ManufacturerOrder;

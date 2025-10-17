@@ -7,6 +7,5 @@ address: { type: DataTypes.STRING(255) },
 phone: { type: DataTypes.STRING(20) },
 email: { type: DataTypes.STRING(100) },
 manager_id: { type: DataTypes.CHAR(36) },
-created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
 });
 module.exports = Dealer;

@@ -17,6 +17,22 @@ tags:
     description: Admin and EVM Staff endpoints to manage internal users
   - name: Vehicle Catalog
     description: Manage vehicle models, variants and specs
+  - name: Test Drives
+    description: Manage customer test drive appointments
+  - name: Complaints
+    description: Handle customer complaints and resolutions
+  - name: Customers
+    description: Manage customer profiles and lifecycle
+  - name: Quotes
+    description: Manage sales quotes for customers
+  - name: Dealers
+    description: Manage dealer network records
+  - name: Inventory
+    description: Manage manufacturer and dealer inventory movements
+  - name: Dealer Inventory
+    description: Manage inventory levels at each dealer location
+  - name: Orders
+    description: Manage dealer orders, payments and shipments
 
 paths:
   ##########################################################
@@ -351,6 +367,103 @@ paths:
         "500":
           description: Server error
 
+  /vehicles/models/{id}:
+    put:
+      tags:
+        - Vehicle Catalog
+      summary: Update a vehicle model
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Vehicle model ID
+          schema:
+            type: string
+            format: uuid
+      x-codeSamples:
+        - lang: curl
+          label: cURL
+          source: |
+            curl -X PUT "http://localhost:3000/vehicles/models/{id}" \
+              -H "Authorization: Bearer <token>" \
+              -H "Content-Type: application/json" \
+              -d '{
+                "name": "VinFast Klara S 2024",
+                "description": "Bản nâng cấp với pin LFP mới"
+              }'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleModelUpdateRequest"
+            example:
+              name: "VinFast Klara S 2024"
+              description: "Bản nâng cấp với pin LFP mới"
+      responses:
+        "200":
+          description: Vehicle model updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleModelResponse"
+              example:
+                message: "Cập nhật vehicle model thành công"
+                model:
+                  id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+                  name: "VinFast Klara S 2024"
+                  description: "Bản nâng cấp với pin LFP mới"
+                  created_at: "2024-09-10T08:30:15.000Z"
+                  updated_at: "2024-10-01T09:15:10.000Z"
+        "400":
+          description: Invalid payload or duplicate model name
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Vehicle model not found
+        "500":
+          description: Server error
+
+    delete:
+      tags:
+        - Vehicle Catalog
+      summary: Delete a vehicle model
+      description: Requires Admin role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Vehicle model ID
+          schema:
+            type: string
+            format: uuid
+      x-codeSamples:
+        - lang: curl
+          label: cURL
+          source: |
+            curl -X DELETE "http://localhost:3000/vehicles/models/{id}" \
+              -H "Authorization: Bearer <token>"
+      responses:
+        "204":
+          description: Vehicle model deleted successfully
+        "400":
+          description: Model still has variants attached
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Vehicle model not found
+        "500":
+          description: Server error
+
   /vehicles/variants:
     get:
       tags:
@@ -451,12 +564,109 @@ paths:
         "500":
           description: Server error
 
+  /vehicles/variants/{id}:
+    get:
+      tags:
+        - Vehicle Catalog
+      summary: Get vehicle variant detail
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Variant detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleVariantDetail"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Vehicle variant not found
+        "500":
+          description: Server error
+
+    put:
+      tags:
+        - Vehicle Catalog
+      summary: Update a vehicle variant
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VehicleVariantUpdateRequest"
+      responses:
+        "200":
+          description: Vehicle variant updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VehicleVariantResponse"
+        "400":
+          description: Invalid input data
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Vehicle variant not found
+        "500":
+          description: Server error
+
+    delete:
+      tags:
+        - Vehicle Catalog
+      summary: Delete a vehicle variant
+      description: Requires Admin role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Variant deleted successfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Vehicle variant not found
+        "500":
+          description: Server error
+
   /vehicles/model-specs:
     post:
       tags:
         - Vehicle Catalog
       summary: Attach or update a specification value for a model
-      description: Requires Admin or EVM Staff role
+      description: >
+        Requires Admin or EVM Staff role. Tự động tạo spec mới nếu chưa tồn tại
+        (dựa vào name + category) hoặc tái sử dụng/ cập nhật spec hiện có.
       security:
         - bearerAuth: []
       x-codeSamples:
@@ -468,8 +678,12 @@ paths:
               -H "Content-Type: application/json" \
               -d '{
                 "model_id": "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890",
-                "spec_id": "12345678-90ab-cdef-1234-567890abcdef",
-                "value": "120 km"
+                "value": "150 km",
+                "spec": {
+                  "name": "Quãng đường tối đa",
+                  "category": "Performance",
+                  "unit": "km"
+                }
               }'
       requestBody:
         required: true
@@ -479,8 +693,11 @@ paths:
               $ref: "#/components/schemas/VehicleModelSpecAttachRequest"
             example:
               model_id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
-              spec_id: "12345678-90ab-cdef-1234-567890abcdef"
-              value: "120 km"
+              value: "150 km"
+              spec:
+                name: "Quãng đường tối đa"
+                category: "Performance"
+                unit: "km"
       responses:
         "201":
           description: Spec attached successfully
@@ -494,7 +711,7 @@ paths:
                   id: "0f1e2d3c-4b5a-6978-9012-abcd3456ef78"
                   model_id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
                   spec_id: "12345678-90ab-cdef-1234-567890abcdef"
-                  value: "120 km"
+                  value: "150 km"
                   spec:
                     id: "12345678-90ab-cdef-1234-567890abcdef"
                     category: "Performance"
@@ -512,7 +729,7 @@ paths:
                   id: "0f1e2d3c-4b5a-6978-9012-abcd3456ef78"
                   model_id: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
                   spec_id: "12345678-90ab-cdef-1234-567890abcdef"
-                  value: "150 km"
+                  value: "160 km"
                   spec:
                     id: "12345678-90ab-cdef-1234-567890abcdef"
                     category: "Performance"
@@ -526,6 +743,893 @@ paths:
           description: Forbidden
         "404":
           description: Model or spec not found
+        "500":
+          description: Server error
+
+  ##########################################################
+  #                   TEST DRIVES
+  ##########################################################
+  /test-drives/schedule:
+    post:
+      tags:
+        - Test Drives
+      summary: Schedule a customer test drive
+      description: Requires Dealer Staff, Dealer Manager or Admin role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TestDriveScheduleRequest"
+      responses:
+        "201":
+          description: Test drive scheduled successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TestDriveResponse"
+        "400":
+          description: Invalid request payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Server error
+
+  ##########################################################
+  #                   COMPLAINTS
+  ##########################################################
+  /complaints:
+    post:
+      tags:
+        - Complaints
+      summary: Submit a complaint
+      description: Allows Customer, Dealer Staff, Dealer Manager or Admin roles
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplaintCreateRequest"
+      responses:
+        "201":
+          description: Complaint created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplaintResponse"
+        "400":
+          description: Invalid request payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Server error
+
+  /complaints/resolve:
+    post:
+      tags:
+        - Complaints
+      summary: Resolve a submitted complaint
+      description: Requires Admin or Dealer Manager role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ComplaintResolveRequest"
+      responses:
+        "200":
+          description: Complaint resolved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ComplaintResponse"
+        "400":
+          description: Invalid request payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Complaint not found
+        "500":
+          description: Server error
+
+  ##########################################################
+  #                   CUSTOMERS
+  ##########################################################
+  /customers:
+    post:
+      tags:
+        - Customers
+      summary: Create a customer account
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerCreateRequest"
+      responses:
+        "201":
+          description: Customer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDetailResponse"
+        "400":
+          description: Missing or invalid data / email already exists
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Server error
+
+    get:
+      tags:
+        - Customers
+      summary: List customers
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Customer list retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CustomerDetail"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Server error
+
+  /customers/me:
+    get:
+      tags:
+        - Customers
+      summary: Get the current authenticated customer
+      description: Accessible to Customer, Admin and EVM Staff roles
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current customer information
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerMeResponse"
+        "401":
+          description: Unauthorized
+        "404":
+          description: Customer not found
+        "500":
+          description: Server error
+
+  /customers/{id}:
+    put:
+      tags:
+        - Customers
+      summary: Update customer information
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomerUpdateRequest"
+      responses:
+        "200":
+          description: Customer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerDetailResponse"
+        "400":
+          description: Invalid request payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Customer not found
+        "500":
+          description: Server error
+
+    delete:
+      tags:
+        - Customers
+      summary: Delete a customer
+      description: Requires Admin role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Customer deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+              example:
+                message: Xóa khách hàng thành công
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Customer not found
+        "500":
+          description: Server error
+
+  ##########################################################
+  #                   QUOTES
+  ##########################################################
+  /quotes:
+    post:
+      tags:
+        - Quotes
+      summary: Create a sales quote
+      description: Requires Dealer Staff, Dealer Manager, Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuoteCreateRequest"
+      responses:
+        "201":
+          description: Quote created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteDetail"
+        "400":
+          description: Invalid payload or invalid references
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Related record not found
+        "500":
+          description: Server error
+
+    get:
+      tags:
+        - Quotes
+      summary: List quotes
+      description: Requires Dealer Staff, Dealer Manager, Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Quotes retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/QuoteDetail"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Server error
+
+  /quotes/{id}:
+    get:
+      tags:
+        - Quotes
+      summary: Get a specific quote
+      description: Requires Dealer Staff, Dealer Manager, Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Quote detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteDetail"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Quote not found
+        "500":
+          description: Server error
+
+    put:
+      tags:
+        - Quotes
+      summary: Update a quote
+      description: Requires Dealer Staff, Dealer Manager or Admin role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/QuoteUpdateRequest"
+      responses:
+        "200":
+          description: Quote updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QuoteDetail"
+        "400":
+          description: Invalid payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Quote not found
+        "500":
+          description: Server error
+
+    delete:
+      tags:
+        - Quotes
+      summary: Delete a quote
+      description: Requires Dealer Manager or Admin role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Quote deleted successfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Quote not found
+        "500":
+          description: Server error
+
+  ##########################################################
+  #                   DEALERS
+  ##########################################################
+  /dealers:
+    get:
+      tags:
+        - Dealers
+      summary: List dealers
+      description: Requires Admin, Dealer Manager or EVM Staff role
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dealer list retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dealer"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Server error
+
+    post:
+      tags:
+        - Dealers
+      summary: Create a dealer
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DealerCreateRequest"
+      responses:
+        "201":
+          description: Dealer created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dealer"
+        "400":
+          description: Invalid request payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Server error
+
+  /dealers/{id}:
+    put:
+      tags:
+        - Dealers
+      summary: Update dealer information
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DealerUpdateRequest"
+      responses:
+        "200":
+          description: Dealer updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dealer"
+        "400":
+          description: Invalid request payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Dealer not found
+        "500":
+          description: Server error
+
+    delete:
+      tags:
+        - Dealers
+      summary: Remove a dealer
+      description: Requires Admin role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Dealer deleted successfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Dealer not found
+        "500":
+          description: Server error
+
+  ##########################################################
+  #                   INVENTORY
+  ##########################################################
+  /inventory/apply-inbound:
+    post:
+      tags:
+        - Inventory
+      summary: Apply manufacturer inbound to a dealer
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InventoryApplyInboundRequest"
+      responses:
+        "200":
+          description: Inbound allocation applied
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+              example:
+                message: Inbound applied
+        "400":
+          description: Invalid request payload or insufficient inventory
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Manufacturer order not found
+        "500":
+          description: Server error
+
+  ##########################################################
+  #               DEALER INVENTORY
+  ##########################################################
+  /dealer-inventory:
+    get:
+      tags:
+        - Dealer Inventory
+      summary: List dealer inventory entries
+      description: Requires Dealer Staff, Dealer Manager, Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: dealer_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter by dealer id
+        - name: variant_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter by vehicle variant id
+      responses:
+        "200":
+          description: Dealer inventory entries retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DealerInventoryRecord"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Server error
+
+    post:
+      tags:
+        - Dealer Inventory
+      summary: Create a dealer inventory entry
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DealerInventoryCreateRequest"
+      responses:
+        "201":
+          description: Dealer inventory entry created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealerInventoryRecord"
+        "400":
+          description: Invalid request payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Dealer or vehicle variant not found
+        "500":
+          description: Server error
+
+  /dealer-inventory/{id}:
+    get:
+      tags:
+        - Dealer Inventory
+      summary: Retrieve a dealer inventory entry
+      description: Requires Dealer Staff, Dealer Manager, Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Dealer inventory entry retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealerInventoryRecord"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Dealer inventory entry not found
+        "500":
+          description: Server error
+
+    put:
+      tags:
+        - Dealer Inventory
+      summary: Update quantity for a dealer inventory entry
+      description: Requires Admin or EVM Staff role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DealerInventoryUpdateRequest"
+      responses:
+        "200":
+          description: Dealer inventory entry updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DealerInventoryRecord"
+        "400":
+          description: Invalid request payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Dealer inventory entry not found
+        "500":
+          description: Server error
+
+    delete:
+      tags:
+        - Dealer Inventory
+      summary: Delete a dealer inventory entry
+      description: Requires Admin role
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Dealer inventory entry deleted successfully
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Dealer inventory entry not found
+        "500":
+          description: Server error
+
+  ##########################################################
+  #                   ORDERS
+  ##########################################################
+  /orders/from-quote:
+    post:
+      tags:
+        - Orders
+      summary: Create an order from an approved quote
+      description: Requires Dealer Staff, Dealer Manager or Admin role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderFromQuoteRequest"
+      responses:
+        "201":
+          description: Order created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Quote not found
+        "500":
+          description: Server error
+
+  /orders/confirm:
+    post:
+      tags:
+        - Orders
+      summary: Confirm an order and allocate stock
+      description: Requires Dealer Manager or Admin role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderConfirmRequest"
+      responses:
+        "200":
+          description: Order confirmed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderConfirmResponse"
+        "400":
+          description: Invalid request payload or insufficient stock
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Order not found
+        "500":
+          description: Server error
+
+  /orders/pay:
+    post:
+      tags:
+        - Orders
+      summary: Record a payment for an order
+      description: Requires Dealer Staff, Dealer Manager or Admin role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderPaymentRequest"
+      responses:
+        "200":
+          description: Payment recorded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderPaymentResponse"
+        "400":
+          description: Invalid request payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Order not found
+        "500":
+          description: Server error
+
+  /orders/shipment:
+    post:
+      tags:
+        - Orders
+      summary: Create a shipment for an order
+      description: Requires Dealer Staff, Dealer Manager or Admin role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderShipmentRequest"
+      responses:
+        "201":
+          description: Shipment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Shipment"
+        "400":
+          description: Invalid request payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Server error
+
+  /orders/shipment/delivered:
+    post:
+      tags:
+        - Orders
+      summary: Mark a shipment as delivered
+      description: Requires Dealer Staff, Dealer Manager or Admin role
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShipmentDeliveredRequest"
+      responses:
+        "200":
+          description: Shipment marked as delivered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+              example:
+                message: Delivered
+        "400":
+          description: Invalid request payload
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Shipment not found
         "500":
           description: Server error
 
@@ -633,6 +1737,424 @@ components:
         phone:
           type: string
           example: "0987654321"
+
+    CustomerDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        full_name:
+          type: string
+          example: Nguyen Van A
+        email:
+          type: string
+          format: email
+          example: customer@example.com
+        phone:
+          type: string
+          nullable: true
+          example: "0987654321"
+        address:
+          type: string
+          nullable: true
+          example: 123 Nguyen Trai, District 1, Ho Chi Minh City
+        dob:
+          type: string
+          format: date
+          nullable: true
+          example: 1995-05-20
+
+    CustomerCreateRequest:
+      type: object
+      required:
+        - full_name
+        - email
+        - password
+      properties:
+        full_name:
+          type: string
+          example: Nguyen Van A
+        email:
+          type: string
+          format: email
+          example: customer@example.com
+        password:
+          type: string
+          format: password
+          example: P@ssw0rd!
+        phone:
+          type: string
+          example: "0987654321"
+        address:
+          type: string
+          example: 123 Nguyen Trai, District 1, Ho Chi Minh City
+        dob:
+          type: string
+          format: date
+          example: 1995-05-20
+
+    CustomerUpdateRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+          example: Nguyen Van B
+        phone:
+          type: string
+          example: "0901234567"
+        address:
+          type: string
+          example: 456 Le Loi, District 1, Ho Chi Minh City
+        dob:
+          type: string
+          format: date
+          example: 1994-09-01
+
+    CustomerDetailResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Tạo khách hàng thành công
+        customer:
+          $ref: "#/components/schemas/CustomerDetail"
+
+    CustomerMeResponse:
+      type: object
+      properties:
+        customer:
+          $ref: "#/components/schemas/CustomerDetail"
+
+    VehicleModelCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: "VinFast Klara S"
+        description:
+          type: string
+          nullable: true
+          example: "Dòng xe tay ga điện đô thị với pin LFP"
+
+    VehicleModelUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "VinFast Klara S 2024"
+        description:
+          type: string
+          nullable: true
+          example: "Bản nâng cấp với hệ pin LFP và công suất cao hơn"
+
+    VehicleModel:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+        name:
+          type: string
+          example: "VinFast Klara S"
+        description:
+          type: string
+          nullable: true
+          example: "Dòng xe tay ga điện đô thị với pin LFP"
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-09-10T08:30:15.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-09-10T08:30:15.000Z"
+
+    VehicleModelDetail:
+      allOf:
+        - $ref: "#/components/schemas/VehicleModel"
+        - type: object
+          properties:
+            variants:
+              type: array
+              items:
+                $ref: "#/components/schemas/VehicleVariantDetail"
+            modelSpecs:
+              type: array
+              items:
+                $ref: "#/components/schemas/VehicleModelSpecDetail"
+
+    VehicleModelResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Tạo vehicle model thành công"
+        model:
+          $ref: "#/components/schemas/VehicleModelDetail"
+
+    VehicleModelSpecAttachRequest:
+      type: object
+      required:
+        - model_id
+        - value
+        - spec
+      properties:
+        model_id:
+          type: string
+          format: uuid
+          example: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+        value:
+          type: string
+          example: "150 km"
+        spec:
+          type: object
+          description: >
+            Thông tin spec cần gắn. Có thể truyền thêm id để tái sử dụng spec hiện hữu;
+            nếu không có id, name là bắt buộc và hệ thống sẽ tìm/ tạo spec theo name + category.
+          properties:
+            id:
+              type: string
+              format: uuid
+              nullable: true
+              example: "12345678-90ab-cdef-1234-567890abcdef"
+            name:
+              type: string
+              example: "Quãng đường tối đa"
+            category:
+              type: string
+              nullable: true
+              example: "Performance"
+            unit:
+              type: string
+              nullable: true
+              example: "km"
+
+    VehicleModelSpecDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "0f1e2d3c-4b5a-6978-9012-abcd3456ef78"
+        model_id:
+          type: string
+          format: uuid
+          example: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+        spec_id:
+          type: string
+          format: uuid
+          example: "12345678-90ab-cdef-1234-567890abcdef"
+        value:
+          type: string
+          example: "150 km"
+        spec:
+          type: object
+          nullable: true
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: "12345678-90ab-cdef-1234-567890abcdef"
+            category:
+              type: string
+              example: "Performance"
+            name:
+              type: string
+              example: "Quãng đường tối đa"
+            unit:
+              type: string
+              nullable: true
+              example: "km"
+
+    VehicleModelSpecResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Gắn spec cho model thành công"
+        vehicleModelSpec:
+          $ref: "#/components/schemas/VehicleModelSpecDetail"
+
+    VehicleVariantCreateRequest:
+      type: object
+      required:
+        - model_id
+        - version
+        - color
+        - base_price
+      properties:
+        model_id:
+          type: string
+          format: uuid
+          example: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+        version:
+          type: string
+          example: Premium
+        color:
+          type: string
+          example: Moonlight Silver
+        base_price:
+          type: number
+          format: float
+          example: 2599.99
+
+    VehicleVariantUpdateRequest:
+      type: object
+      properties:
+        model_id:
+          type: string
+          format: uuid
+          example: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+        version:
+          type: string
+          example: Premium Plus
+        color:
+          type: string
+          example: Midnight Blue
+        base_price:
+          type: number
+          format: float
+          example: 2799.0
+
+    VehicleVariantDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "a7b8c9d0-e1f2-3456-7890-ab12c3d4e5f6"
+        model_id:
+          type: string
+          format: uuid
+          example: "f1a2b3c4-d5e6-7890-ab12-c3d4e5f67890"
+        version:
+          type: string
+          example: Premium
+        color:
+          type: string
+          example: Moonlight Silver
+        base_price:
+          type: number
+          format: float
+          example: 2599.99
+        created_at:
+          type: string
+          format: date-time
+          example: "2024-09-12T09:10:00.000Z"
+        updated_at:
+          type: string
+          format: date-time
+          example: "2024-09-20T05:30:00.000Z"
+        vehicleModel:
+          $ref: "#/components/schemas/VehicleModel"
+
+    VehicleVariantResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Tạo variant thành công
+        variant:
+          $ref: "#/components/schemas/VehicleVariantDetail"
+
+    QuoteCreateRequest:
+      type: object
+      required:
+        - customer_id
+        - dealer_id
+        - variant_id
+        - price
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        dealer_id:
+          type: string
+          format: uuid
+          example: "22222222-2222-2222-2222-222222222222"
+        variant_id:
+          type: string
+          format: uuid
+          example: "33333333-3333-3333-3333-333333333333"
+        price:
+          type: number
+          format: float
+          example: 3250.5
+
+    QuoteUpdateRequest:
+      type: object
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        dealer_id:
+          type: string
+          format: uuid
+          example: "22222222-2222-2222-2222-222222222222"
+        variant_id:
+          type: string
+          format: uuid
+          example: "33333333-3333-3333-3333-333333333333"
+        price:
+          type: number
+          format: float
+          example: 3400
+
+    QuoteDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+        customer_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        dealer_id:
+          type: string
+          format: uuid
+          example: "22222222-2222-2222-2222-222222222222"
+        variant_id:
+          type: string
+          format: uuid
+          example: "33333333-3333-3333-3333-333333333333"
+        price:
+          type: number
+          format: float
+          example: 3250.5
+        customer:
+          $ref: "#/components/schemas/CustomerDetail"
+        dealer:
+          $ref: "#/components/schemas/Dealer"
+        variant:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: "44444444-4444-4444-4444-444444444444"
+            model_id:
+              type: string
+              format: uuid
+              example: "55555555-5555-5555-5555-555555555555"
+            version:
+              type: string
+              example: Premium
+            color:
+              type: string
+              example: Pearl White
+            base_price:
+              type: number
+              format: float
+              example: 2800
 
     MessageResponse:
       type: object
@@ -750,3 +2272,578 @@ components:
         role_name:
           type: string
           example: "Admin"
+
+    ##########################################################
+    #                   TEST DRIVES
+    ##########################################################
+    TestDriveScheduleRequest:
+      type: object
+      required:
+        - customer_id
+        - dealer_id
+        - vehicle_model_id
+        - schedule_at
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        dealer_id:
+          type: string
+          format: uuid
+          example: "22222222-2222-2222-2222-222222222222"
+        vehicle_model_id:
+          type: string
+          format: uuid
+          example: "33333333-3333-3333-3333-333333333333"
+        staff_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "44444444-4444-4444-4444-444444444444"
+        schedule_at:
+          type: string
+          format: date-time
+          example: "2024-10-15T09:30:00Z"
+        notes:
+          type: string
+          nullable: true
+          example: "Khách muốn thử cả hai biến thể pin"
+
+    TestDriveResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "55555555-5555-5555-5555-555555555555"
+        customer_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        dealer_id:
+          type: string
+          format: uuid
+          example: "22222222-2222-2222-2222-222222222222"
+        vehicle_model_id:
+          type: string
+          format: uuid
+          example: "33333333-3333-3333-3333-333333333333"
+        staff_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "44444444-4444-4444-4444-444444444444"
+        schedule_at:
+          type: string
+          format: date-time
+          example: "2024-10-15T09:30:00Z"
+        status:
+          type: string
+          enum:
+            - scheduled
+            - completed
+            - cancelled
+          example: "scheduled"
+        notes:
+          type: string
+          nullable: true
+          example: "Khách muốn thử cả hai biến thể pin"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-10-10T02:15:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-10-10T02:15:00.000Z"
+
+    ##########################################################
+    #                   COMPLAINTS
+    ##########################################################
+    ComplaintCreateRequest:
+      type: object
+      required:
+        - customer_id
+        - description
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        dealer_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "22222222-2222-2222-2222-222222222222"
+        order_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "33333333-3333-3333-3333-333333333333"
+        description:
+          type: string
+          example: "Xe giao chậm 5 ngày so với cam kết."
+
+    ComplaintResolveRequest:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "44444444-4444-4444-4444-444444444444"
+        status:
+          type: string
+          enum:
+            - resolved
+            - in_progress
+            - rejected
+          default: resolved
+          example: "resolved"
+
+    ComplaintResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "44444444-4444-4444-4444-444444444444"
+        customer_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        dealer_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "22222222-2222-2222-2222-222222222222"
+        order_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "33333333-3333-3333-3333-333333333333"
+        description:
+          type: string
+          example: "Xe giao chậm 5 ngày so với cam kết."
+        status:
+          type: string
+          enum:
+            - pending
+            - in_progress
+            - resolved
+            - rejected
+          example: "pending"
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-10-20T08:45:00Z"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-10-10T02:15:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-10-10T02:15:00.000Z"
+
+    ##########################################################
+    #                   DEALERS
+    ##########################################################
+    Dealer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "55555555-5555-5555-5555-555555555555"
+        name:
+          type: string
+          example: "EV Dealer District 1"
+        address:
+          type: string
+          nullable: true
+          example: "123 Nguyen Hue, District 1, HCMC"
+        phone:
+          type: string
+          nullable: true
+          example: "0908123456"
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: "contact@evdealer.vn"
+        manager_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "66666666-6666-6666-6666-666666666666"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-10-09T08:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-10-09T08:00:00.000Z"
+
+    DealerCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: "EV Dealer District 1"
+        address:
+          type: string
+          nullable: true
+          example: "123 Nguyen Hue, District 1, HCMC"
+        phone:
+          type: string
+          nullable: true
+          example: "0908123456"
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: "contact@evdealer.vn"
+        manager_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "66666666-6666-6666-6666-666666666666"
+
+    DealerUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          example: "EV Dealer District 7"
+        address:
+          type: string
+          nullable: true
+          example: "456 Nguyen Van Linh, District 7, HCMC"
+        phone:
+          type: string
+          nullable: true
+          example: "0908555666"
+        email:
+          type: string
+          format: email
+          nullable: true
+          example: "support@evdealer.vn"
+        manager_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "77777777-7777-7777-7777-777777777777"
+
+    ##########################################################
+    #                   INVENTORY
+    ##########################################################
+    InventoryApplyInboundRequest:
+      type: object
+      required:
+        - manufacturer_order_id
+        - dealer_id
+      properties:
+        manufacturer_order_id:
+          type: string
+          format: uuid
+          example: "88888888-8888-8888-8888-888888888888"
+        dealer_id:
+          type: string
+          format: uuid
+          example: "22222222-2222-2222-2222-222222222222"
+
+    ##########################################################
+    #               DEALER INVENTORY
+    ##########################################################
+    DealerInventoryRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "de0a1f2b-3456-7890-abcd-ef1234567890"
+        dealer_id:
+          type: string
+          format: uuid
+          example: "22222222-2222-2222-2222-222222222222"
+        variant_id:
+          type: string
+          format: uuid
+          example: "33333333-3333-3333-3333-333333333333"
+        quantity:
+          type: integer
+          example: 12
+        updated_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-10-21T09:30:00.000Z"
+        dealer:
+          $ref: "#/components/schemas/Dealer"
+        variant:
+          $ref: "#/components/schemas/VehicleVariantDetail"
+
+    DealerInventoryCreateRequest:
+      type: object
+      required:
+        - dealer_id
+        - variant_id
+      properties:
+        dealer_id:
+          type: string
+          format: uuid
+          example: "22222222-2222-2222-2222-222222222222"
+        variant_id:
+          type: string
+          format: uuid
+          example: "33333333-3333-3333-3333-333333333333"
+        quantity:
+          type: integer
+          minimum: 0
+          example: 5
+
+    DealerInventoryUpdateRequest:
+      type: object
+      required:
+        - quantity
+      properties:
+        quantity:
+          type: integer
+          minimum: 0
+          example: 8
+
+    ##########################################################
+    #                   ORDERS
+    ##########################################################
+    OrderFromQuoteRequest:
+      type: object
+      required:
+        - quote_id
+      properties:
+        quote_id:
+          type: string
+          format: uuid
+          example: "99999999-9999-9999-9999-999999999999"
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+        customer_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        dealer_id:
+          type: string
+          format: uuid
+          example: "22222222-2222-2222-2222-222222222222"
+        variant_id:
+          type: string
+          format: uuid
+          example: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+        total_amount:
+          type: number
+          format: float
+          example: 3250.5
+        status:
+          type: string
+          enum:
+            - pending
+            - confirmed
+            - shipped
+            - delivered
+            - cancelled
+          example: "pending"
+        order_date:
+          type: string
+          format: date-time
+          example: "2024-10-10T02:15:00.000Z"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-10-10T02:15:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-10-10T02:15:00.000Z"
+
+    OrderConfirmRequest:
+      type: object
+      required:
+        - order_id
+        - dealer_id
+      properties:
+        order_id:
+          type: string
+          format: uuid
+          example: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+        dealer_id:
+          type: string
+          format: uuid
+          example: "22222222-2222-2222-2222-222222222222"
+
+    OrderConfirmResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Order confirmed"
+        vin:
+          type: string
+          example: "VIN-1234567890"
+
+    OrderPaymentRequest:
+      type: object
+      required:
+        - order_id
+        - amount
+        - method
+      properties:
+        order_id:
+          type: string
+          format: uuid
+          example: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+        amount:
+          type: number
+          format: float
+          example: 3250.5
+        method:
+          type: string
+          enum:
+            - cash
+            - bank_transfer
+            - installment
+          example: "bank_transfer"
+
+    OrderPaymentResponse:
+      type: object
+      properties:
+        payment:
+          $ref: "#/components/schemas/Payment"
+
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "cccccccc-cccc-cccc-cccc-cccccccccccc"
+        order_id:
+          type: string
+          format: uuid
+          example: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+        amount:
+          type: number
+          format: float
+          example: 3250.5
+        method:
+          type: string
+          enum:
+            - cash
+            - bank_transfer
+            - installment
+          example: "bank_transfer"
+        paid_at:
+          type: string
+          format: date-time
+          example: "2024-10-10T04:20:00.000Z"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-10-10T04:20:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-10-10T04:20:00.000Z"
+
+    OrderShipmentRequest:
+      type: object
+      required:
+        - order_id
+        - dealer_id
+        - delivery_address
+      properties:
+        order_id:
+          type: string
+          format: uuid
+          example: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+        dealer_id:
+          type: string
+          format: uuid
+          example: "22222222-2222-2222-2222-222222222222"
+        delivery_address:
+          type: string
+          example: "789 Tran Hung Dao, District 5, HCMC"
+
+    Shipment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "dddddddd-dddd-dddd-dddd-dddddddddddd"
+        type:
+          type: string
+          enum:
+            - factory_to_dealer
+            - dealer_to_customer
+          example: "dealer_to_customer"
+        dealer_id:
+          type: string
+          format: uuid
+          example: "22222222-2222-2222-2222-222222222222"
+        order_id:
+          type: string
+          format: uuid
+          nullable: true
+          example: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+        status:
+          type: string
+          enum:
+            - pending
+            - in_transit
+            - delivered
+            - failed
+          example: "in_transit"
+        shipped_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-10-15T06:00:00Z"
+        delivered_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-10-18T03:30:00Z"
+        delivery_address:
+          type: string
+          nullable: true
+          example: "789 Tran Hung Dao, District 5, HCMC"
+        createdAt:
+          type: string
+          format: date-time
+          example: "2024-10-12T07:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2024-10-12T07:30:00.000Z"
+
+    ShipmentDeliveredRequest:
+      type: object
+      required:
+        - shipment_id
+      properties:
+        shipment_id:
+          type: string
+          format: uuid
+          example: "dddddddd-dddd-dddd-dddd-dddddddddddd"

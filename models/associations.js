@@ -1,113 +1,114 @@
-// src/models/associations.js
-const sequelizeAssoc = require("../config/db");
+// ✅ Import Sequelize instance
+const sequelize = require("../config/db");
 
-// Import models
-const RoleM = require("./Role");
-const UserM = require("./User");
-const DealerM = require("./Dealer");
-const CustomerM = require("./Customer");
-const VehicleModelM = require("./VehicleModel");
-const VehicleVariantM = require("./VehicleVariant");
-const SpecM = require("./Spec");
-const VehicleModelSpecM = require("./VehicleModelSpec");
-const QuoteM = require("./Quote");
-const OrderM = require("./Order");
-const PaymentM = require("./Payment");
-const PromotionM = require("./Promotion");
-const TestDriveM = require("./TestDrive");
-const ComplaintM = require("./Complaint");
-const ManufacturerOrderM = require("./ManufacturerOrder");
-const InboundAllocationM = require("./InboundAllocation");
-const ManufacturerInventoryM = require("./ManufacturerInventory");
-const DealerInventoryM = require("./DealerInventory");
-const VehicleInventoryM = require("./VehicleInventory");
-const ShipmentM = require("./Shipment");
+// ✅ Import tất cả các model
+const Role = require("./Role");
+const User = require("./User");
+const Dealer = require("./Dealer");
+const Customer = require("./Customer");
+const VehicleModel = require("./VehicleModel");
+const VehicleVariant = require("./VehicleVariant");
+const Spec = require("./Spec");
+const VehicleModelSpec = require("./VehicleModelSpec");
+const Quote = require("./Quote");
+const Order = require("./Order");
+const Payment = require("./Payment");
+const Promotion = require("./Promotion");
+const TestDrive = require("./TestDrive");
+const Complaint = require("./Complaint");
+const ManufacturerOrder = require("./ManufacturerOrder");
+const InboundAllocation = require("./InboundAllocation");
+const ManufacturerInventory = require("./ManufacturerInventory");
+const DealerInventory = require("./DealerInventory");
+const VehicleInventory = require("./VehicleInventory");
+const Shipment = require("./Shipment");
 
 // ========== USERS & ROLES ==========
-UserM.belongsTo(RoleM, { foreignKey: "role_id", as: "role" });
-RoleM.hasMany(UserM, { foreignKey: "role_id", as: "users" });
+User.belongsTo(Role, { foreignKey: "role_id", as: "role" });
+Role.hasMany(User, { foreignKey: "role_id", as: "users" });
 
 // ========== DEALERS ==========
-DealerM.belongsTo(UserM, { foreignKey: "manager_id", as: "manager" });
-UserM.hasMany(DealerM, { foreignKey: "manager_id", as: "managedDealers" });
+Dealer.belongsTo(User, { foreignKey: "manager_id", as: "manager" });
+User.hasMany(Dealer, { foreignKey: "manager_id", as: "managedDealers" });
 
 // ========== VEHICLE MODELS & VARIANTS ==========
-VehicleVariantM.belongsTo(VehicleModelM, { foreignKey: "model_id", as: "model" });
-VehicleModelM.hasMany(VehicleVariantM, { foreignKey: "model_id", as: "variants" });
+VehicleVariant.belongsTo(VehicleModel, { foreignKey: "model_id", as: "vehicleModel" });
+VehicleModel.hasMany(VehicleVariant, { foreignKey: "model_id", as: "vehicleVariants" });
 
 // ========== SPECS ==========
-VehicleModelSpecM.belongsTo(VehicleModelM, { foreignKey: "model_id", as: "vehicleModel" });
-VehicleModelSpecM.belongsTo(SpecM, { foreignKey: "spec_id", as: "spec" });
-VehicleModelM.hasMany(VehicleModelSpecM, { foreignKey: "model_id", as: "specs" });
+VehicleModelSpec.belongsTo(VehicleModel, { foreignKey: "model_id", as: "vehicleModel" });
+VehicleModelSpec.belongsTo(Spec, { foreignKey: "spec_id", as: "spec" });
+VehicleModel.hasMany(VehicleModelSpec, { foreignKey: "model_id", as: "modelSpecs" });
+
 
 // ========== QUOTES, ORDERS, PAYMENTS ==========
-QuoteM.belongsTo(CustomerM, { foreignKey: "customer_id", as: "customer" });
-QuoteM.belongsTo(DealerM, { foreignKey: "dealer_id", as: "dealer" });
-QuoteM.belongsTo(VehicleVariantM, { foreignKey: "variant_id", as: "variant" });
+Quote.belongsTo(Customer, { foreignKey: "customer_id", as: "customer" });
+Quote.belongsTo(Dealer, { foreignKey: "dealer_id", as: "dealer" });
+Quote.belongsTo(VehicleVariant, { foreignKey: "variant_id", as: "variant" });
 
-OrderM.belongsTo(CustomerM, { foreignKey: "customer_id", as: "customer" });
-OrderM.belongsTo(DealerM, { foreignKey: "dealer_id", as: "dealer" });
-OrderM.belongsTo(VehicleVariantM, { foreignKey: "variant_id", as: "variant" });
+Order.belongsTo(Customer, { foreignKey: "customer_id", as: "customer" });
+Order.belongsTo(Dealer, { foreignKey: "dealer_id", as: "dealer" });
+Order.belongsTo(VehicleVariant, { foreignKey: "variant_id", as: "variant" });
 
-PaymentM.belongsTo(OrderM, { foreignKey: "order_id", as: "order" });
-OrderM.hasMany(PaymentM, { foreignKey: "order_id", as: "payments" });
+Payment.belongsTo(Order, { foreignKey: "order_id", as: "order" });
+Order.hasMany(Payment, { foreignKey: "order_id", as: "payments" });
 
 // ========== PROMOTIONS ==========
-PromotionM.belongsTo(DealerM, { foreignKey: "dealer_id", as: "dealer" });
-DealerM.hasMany(PromotionM, { foreignKey: "dealer_id", as: "promotions" });
+Promotion.belongsTo(Dealer, { foreignKey: "dealer_id", as: "dealer" });
+Dealer.hasMany(Promotion, { foreignKey: "dealer_id", as: "promotions" });
 
 // ========== TEST DRIVES ==========
-TestDriveM.belongsTo(CustomerM, { foreignKey: "customer_id", as: "customer" });
-TestDriveM.belongsTo(DealerM, { foreignKey: "dealer_id", as: "dealer" });
-TestDriveM.belongsTo(VehicleModelM, { foreignKey: "vehicle_model_id", as: "vehicleModel" });
-TestDriveM.belongsTo(UserM, { foreignKey: "staff_id", as: "staff" });
+TestDrive.belongsTo(Customer, { foreignKey: "customer_id", as: "customer" });
+TestDrive.belongsTo(Dealer, { foreignKey: "dealer_id", as: "dealer" });
+TestDrive.belongsTo(VehicleModel, { foreignKey: "vehicle_model_id", as: "vehicleModel" });
+TestDrive.belongsTo(User, { foreignKey: "staff_id", as: "staff" });
 
 // ========== COMPLAINTS ==========
-ComplaintM.belongsTo(CustomerM, { foreignKey: "customer_id", as: "customer" });
-ComplaintM.belongsTo(DealerM, { foreignKey: "dealer_id", as: "dealer" });
-ComplaintM.belongsTo(OrderM, { foreignKey: "order_id", as: "order" });
+Complaint.belongsTo(Customer, { foreignKey: "customer_id", as: "customer" });
+Complaint.belongsTo(Dealer, { foreignKey: "dealer_id", as: "dealer" });
+Complaint.belongsTo(Order, { foreignKey: "order_id", as: "order" });
 
 // ========== MANUFACTURER ORDERS & ALLOCATIONS ==========
-ManufacturerOrderM.belongsTo(DealerM, { foreignKey: "dealer_id", as: "dealer" });
-ManufacturerOrderM.belongsTo(UserM, { foreignKey: "created_by", as: "creator" });
-InboundAllocationM.belongsTo(ManufacturerOrderM, { foreignKey: "manufacturer_order_id", as: "manufacturerOrder" });
-InboundAllocationM.belongsTo(VehicleVariantM, { foreignKey: "variant_id", as: "variant" });
-ManufacturerOrderM.hasMany(InboundAllocationM, { foreignKey: "manufacturer_order_id", as: "allocations" });
+ManufacturerOrder.belongsTo(Dealer, { foreignKey: "dealer_id", as: "dealer" });
+ManufacturerOrder.belongsTo(User, { foreignKey: "created_by", as: "creator" });
+InboundAllocation.belongsTo(ManufacturerOrder, { foreignKey: "manufacturer_order_id", as: "manufacturerOrder" });
+InboundAllocation.belongsTo(VehicleVariant, { foreignKey: "variant_id", as: "variant" });
+ManufacturerOrder.hasMany(InboundAllocation, { foreignKey: "manufacturer_order_id", as: "allocations" });
 
 // ========== INVENTORY ==========
-ManufacturerInventoryM.belongsTo(VehicleVariantM, { foreignKey: "variant_id", as: "variant" });
-DealerInventoryM.belongsTo(DealerM, { foreignKey: "dealer_id", as: "dealer" });
-DealerInventoryM.belongsTo(VehicleVariantM, { foreignKey: "variant_id", as: "variant" });
-VehicleInventoryM.belongsTo(VehicleVariantM, { foreignKey: "variant_id", as: "variant" });
-VehicleInventoryM.belongsTo(DealerM, { foreignKey: "dealer_id", as: "dealer" });
+ManufacturerInventory.belongsTo(VehicleVariant, { foreignKey: "variant_id", as: "variant" });
+DealerInventory.belongsTo(Dealer, { foreignKey: "dealer_id", as: "dealer" });
+DealerInventory.belongsTo(VehicleVariant, { foreignKey: "variant_id", as: "variant" });
+VehicleInventory.belongsTo(VehicleVariant, { foreignKey: "variant_id", as: "variant" });
+VehicleInventory.belongsTo(Dealer, { foreignKey: "dealer_id", as: "dealer" });
 
 // ========== SHIPMENTS ==========
-ShipmentM.belongsTo(DealerM, { foreignKey: "dealer_id", as: "dealer" });
-ShipmentM.belongsTo(OrderM, { foreignKey: "order_id", as: "order" });
-DealerM.hasMany(ShipmentM, { foreignKey: "dealer_id", as: "shipments" });
-OrderM.hasMany(ShipmentM, { foreignKey: "order_id", as: "shipments" });
+Shipment.belongsTo(Dealer, { foreignKey: "dealer_id", as: "dealer" });
+Shipment.belongsTo(Order, { foreignKey: "order_id", as: "order" });
+Dealer.hasMany(Shipment, { foreignKey: "dealer_id", as: "shipments" });
+Order.hasMany(Shipment, { foreignKey: "order_id", as: "shipments" });
 
 // ========== EXPORT ==========
 module.exports = {
-  sequelize: sequelizeAssoc,
-  Role: RoleM,
-  User: UserM,
-  Dealer: DealerM,
-  Customer: CustomerM,
-  VehicleModel: VehicleModelM,
-  VehicleVariant: VehicleVariantM,
-  Spec: SpecM,
-  VehicleModelSpec: VehicleModelSpecM,
-  Quote: QuoteM,
-  Order: OrderM,
-  Payment: PaymentM,
-  Promotion: PromotionM,
-  TestDrive: TestDriveM,
-  Complaint: ComplaintM,
-  ManufacturerOrder: ManufacturerOrderM,
-  InboundAllocation: InboundAllocationM,
-  ManufacturerInventory: ManufacturerInventoryM,
-  DealerInventory: DealerInventoryM,
-  VehicleInventory: VehicleInventoryM,
-  Shipment: ShipmentM,
+  sequelize,
+  Role,
+  User,
+  Dealer,
+  Customer,
+  VehicleModel,
+  VehicleVariant,
+  Spec,
+  VehicleModelSpec,
+  Quote,
+  Order,
+  Payment,
+  Promotion,
+  TestDrive,
+  Complaint,
+  ManufacturerOrder,
+  InboundAllocation,
+  ManufacturerInventory,
+  DealerInventory,
+  VehicleInventory,
+  Shipment,
 };

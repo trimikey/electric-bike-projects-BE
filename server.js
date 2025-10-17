@@ -9,8 +9,16 @@ require("./models/associations");
 const { sequelize, Role } = require("./models");
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
+const vehicleRoutes = require("./routes/vehicle.routes");
 const errorHandler = require("./middlewares/error.middleware");
-
+const testDriveRoutes = require("./routes/testDrive.routes");
+const complaintRoutes = require("./routes/complaint.routes");
+const dealerRoutes = require("./routes/dealer.routes");
+const inventoryRoutes = require("./routes/inventory.routes");
+const dealerInventoryRoutes = require("./routes/dealerInventory.routes");
+const orderRoutes = require("./routes/order.routes");
+const customerRoutes = require("./routes/customer.route");
+const quoteRoutes = require("./routes/quote.routes");
 
     
 
@@ -31,10 +39,10 @@ app.use(express.json());
 
 // Swagger setup
 const swaggerPath = path.join(__dirname, "swagger.yaml"); 
-console.log("📄 Loading Swagger from:", swaggerPath);
+// console.log("📄 Loading Swagger from:", swaggerPath);
 
 const swaggerDocument = YAML.load(swaggerPath);
-console.log("✅ Swagger loaded:", !!swaggerDocument);
+// console.log("✅ Swagger loaded:", !!swaggerDocument);
 
 app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.get("/docs.json", (req, res) => {
@@ -46,13 +54,22 @@ app.get("/docs.json", (req, res) => {
 // Routes
 app.use("/auth", authRoutes);
 app.use("/users", userRoutes);
+app.use("/vehicles", vehicleRoutes);
+app.use("/test-drives", testDriveRoutes);
+app.use("/complaints", complaintRoutes);
+app.use("/dealers", dealerRoutes);
+app.use("/inventory", inventoryRoutes);
+app.use("/dealer-inventory", dealerInventoryRoutes);
+app.use("/orders", orderRoutes);
+app.use("/customers", customerRoutes);
+app.use("/quotes", quoteRoutes);
 app.use(errorHandler);
 
 
 (async () => {
   try {
     await sequelize.authenticate();
-    await sequelize.sync({ alter: true });
+    await sequelize.sync();
     const count = await Role.count();
     if (count === 0) {
       await Role.bulkCreate([
@@ -64,10 +81,14 @@ app.use(errorHandler);
       ]);
       console.log("✅ Roles seeded");
     }
+        sequelize.options.logging = console.log;
+
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, "0.0.0.0", () => console.log(`🚀 Server running at http://0.0.0.0:${PORT}`));
+
+
   } catch (err) {
     console.error("❌ Error initializing server:", err);
     process.exit(1);
   }
-})();
+})(); 

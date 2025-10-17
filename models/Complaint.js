@@ -7,7 +7,6 @@ dealer_id: { type: DataTypes.CHAR(36) },
     order_id: { type: DataTypes.CHAR(36) },
     description: { type: DataTypes.TEXT, allowNull: false },
     status: { type: DataTypes.ENUM("pending", "in_progress", "resolved", "rejected"), defaultValue: "pending" },
-    created_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
     resolved_at: { type: DataTypes.DATE, allowNull: true },
     });
     module.exports = Complaint;
