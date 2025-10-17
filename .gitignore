@@ -1,9 +1,16 @@
-# Ignore installed dependencies
+# Node modules
 node_modules/
 
-# Environment and secrets
+# Env files
 .env
-*.env
-*.service-account.json
-*-firebase-adminsdk-*.json
-.DS_Store
+*.json
+
+# Firebase/Google secrets
+config/serviceAccountKeys.js
+# Ignore service account and external folder
+../serviceAccountKey.json
+../test_windows_app/
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
