@@ -41,6 +41,12 @@ exports.register = async (req, res) => {
       role: user.role_id, // ✅ để middleware guard() đọc được
     });
 
+    const refreshToken = jwt.sign(
+      { id: user.id },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: "7d" } // 7 ngày
+    );
+
     // 7️⃣ Trả về response
     return res.status(201).json({
       message: "Đăng ký thành công",
@@ -54,7 +60,9 @@ exports.register = async (req, res) => {
     });
   } catch (err) {
     console.error("❌ Register error:", err);
-    return res.status(500).json({ message: "Server error", error: err.message });
+    return res
+      .status(500)
+      .json({ message: "Server error", error: err.message });
   }
 };
 
@@ -66,7 +74,7 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Email và password là bắt buộc" });
     }
 
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       where: { email },
       include: { model: Role, as: "role" },
     });

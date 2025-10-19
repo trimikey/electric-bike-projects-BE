@@ -52,10 +52,20 @@ exports.getCurrentCustomer = async (req, res) => {
     const auth = req.headers.authorization;
     if (!auth) return res.status(401).json({ message: "No token provided" });
 
-    const token = auth.split(" ")[1];
-    const decoded = verifyToken(token);
+    // Guard middleware đã gán req.user sau khi verify token thành công.
+    let currentUser = req.user;
 
-    const customer = await Customer.findByPk(decoded.id, {
+    // Phòng trường hợp route khác gọi trực tiếp mà không qua guard.
+    if (!currentUser) {
+      const token = auth.split(" ")[1];
+      currentUser = verifyToken(token);
+    }
+
+    if (!currentUser?.id) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+
+    const customer = await Customer.findByPk(currentUser.id, {
       attributes: { exclude: ["password_hash"] },
     });
 
@@ -65,6 +75,7 @@ exports.getCurrentCustomer = async (req, res) => {
 
     res.json({ customer });
   } catch (err) {
+    console.error("getCurrentCustomer error:", err);
     res.status(401).json({ message: "Invalid token" });
   }
 };

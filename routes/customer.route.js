@@ -9,7 +9,7 @@ const { guard } = require("../middlewares/auth.middleware");
 routeCustomer.post("/", guard(["Admin", "EVM Staff"]), ctrlC.createCustomer);
 routeCustomer.get("/", guard(["Admin", "EVM Staff"]), ctrlC.listCustomers);
 routeCustomer.get("/me", guard(["Admin", "EVM Staff", "Customer"]), ctrlC.getCurrentCustomer);
-routeCustomer.put("/:id", guard(["Admin", "EVM Staff"]), ctrlC.updateCustomer);
+routeCustomer.put("/:id", guard(["Admin", "EVM Staff", "Customer"]), ctrlC.updateCustomer);
 routeCustomer.delete("/:id", guard(["Admin"]), ctrlC.deleteCustomer);
 
 module.exports = routeCustomer;

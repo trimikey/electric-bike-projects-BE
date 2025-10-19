@@ -25,6 +25,10 @@ const VehicleVariant = sequelize.define(
       type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
     },
+    thumbnail_url: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
+    },
   },
   {
     tableName: "vehicle_variants",
