@@ -153,11 +153,12 @@ exports.deleteModel = async (req, res) => {
 // ==========================
 exports.createVariant = async (req, res) => {
   try {
-    const { model_id, version, color, base_price } = req.body;
+    const { model_id, version, color, base_price, thumbnail_url } = req.body;
 
     const trimmedModelId = model_id?.trim();
     const trimmedVersion = version?.trim();
     const trimmedColor = color?.trim();
+    let sanitizedThumbnailUrl = null;
 
     if (!trimmedModelId || !trimmedVersion || !trimmedColor)
       return res.status(400).json({ message: "model_id, version và color là bắt buộc" });
@@ -165,12 +166,28 @@ exports.createVariant = async (req, res) => {
     if (base_price === undefined || base_price === null || base_price === "")
       return res.status(400).json({ message: "base_price là bắt buộc" });
 
+    if (thumbnail_url !== undefined && thumbnail_url !== null) {
+      if (typeof thumbnail_url !== "string") {
+        return res.status(400).json({ message: "thumbnail_url phải là chuỗi URL" });
+      }
+      sanitizedThumbnailUrl = thumbnail_url.trim();
+      if (
+        sanitizedThumbnailUrl &&
+        !/^https?:\/\//i.test(sanitizedThumbnailUrl)
+      ) {
+        return res.status(400).json({ message: "thumbnail_url không hợp lệ" });
+      }
+      if (sanitizedThumbnailUrl === "") sanitizedThumbnailUrl = null;
+    }
+
     const model = await VehicleModel.findByPk(trimmedModelId);
     if (!model) return res.status(404).json({ message: "Không tìm thấy vehicle model" });
 
     const numericPrice = Number(base_price);
     if (Number.isNaN(numericPrice) || numericPrice < 0)
       return res.status(400).json({ message: "base_price phải là số không âm" });
+
+  
 
     const duplicated = await VehicleVariant.findOne({
       where: {
@@ -188,6 +205,7 @@ exports.createVariant = async (req, res) => {
       version: trimmedVersion,
       color: trimmedColor,
       base_price: numericPrice,
+      thumbnail_url: sanitizedThumbnailUrl,
     });
 
     const payload = await VehicleVariant.findByPk(variant.id, {
@@ -246,7 +264,7 @@ exports.getVariant = async (req, res) => {
 exports.updateVariant = async (req, res) => {
   try {
     const { id } = req.params;
-    const { model_id, version, color, base_price } = req.body;
+    const { model_id, version, color, base_price, thumbnail_url } = req.body;
 
     const variant = await VehicleVariant.findByPk(id);
     if (!variant) {
@@ -289,6 +307,24 @@ exports.updateVariant = async (req, res) => {
       variant.base_price = numericPrice;
     }
 
+    if (thumbnail_url !== undefined) {
+      if (thumbnail_url === null) {
+        variant.thumbnail_url = null;
+      } else if (typeof thumbnail_url === "string") {
+        const trimmedThumbnailUrl = thumbnail_url.trim();
+        if (
+          trimmedThumbnailUrl &&
+          !/^https?:\/\//i.test(trimmedThumbnailUrl)
+        ) {
+          return res.status(400).json({ message: "thumbnail_url không hợp lệ" });
+        }
+        variant.thumbnail_url =
+          trimmedThumbnailUrl === "" ? null : trimmedThumbnailUrl;
+      } else {
+        return res.status(400).json({ message: "thumbnail_url phải là chuỗi URL" });
+      }
+    }
+
     await variant.save();
     const payload = await VehicleVariant.findByPk(variant.id, {
       include: { model: VehicleModel, as: "vehicleModel" },
@@ -312,7 +348,7 @@ exports.deleteVariant = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy vehicle variant" });
     }
     await variant.destroy();
-    return res.status(204).send();
+    return res.status(204).json({message: "Xóa variant thành công" });
   } catch (err) {
     console.error("Delete variant error:", err);
     return res.status(500).json({ message: "Server error", error: err.message });

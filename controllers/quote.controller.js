@@ -7,11 +7,18 @@ const quoteIncludes = [
   { model: VehicleVariant, as: "variant", attributes: ["id", "model_id", "version", "color", "base_price"] },
 ];
 
+
+
 exports.create = async (req, res) => {
   try {
-    const { customer_id, dealer_id, variant_id, price } = req.body;
-    if (!customer_id || !dealer_id || !variant_id || price === undefined || price === null) {
+    const { customer_id, dealer_id, variant_id} = req.body;
+    const price = VehicleVariant.findByPk(variant_id)?.base_price;
+    if (!customer_id || !dealer_id || !variant_id ) {
       return res.status(400).json({ message: "customer_id, dealer_id, variant_id và price là bắt buộc" });
+    }else  {
+      if (price === undefined || price === null) {
+        return res.status(400).json({ message: "price không được null" });
+      }
     }
 
     const numericPrice = Number(price);

@@ -1,7 +1,7 @@
 const { User, Role } = require("../models/associations");
 const bcrypt = require("bcryptjs");
 const { v4: uuidv4 } = require("uuid");
-const { generateToken } = require("../utils/jwt");
+const {generateTokens}  = require("../utils/jwt");
 
 // 🧾 Lấy danh sách user nội bộ
 exports.list = async (req, res) => {
@@ -33,7 +33,7 @@ exports.loginUser = async (req, res) => {
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(401).json({ message: "Sai mật khẩu" });
 
-    const token = generateToken({
+    const token = generateTokens({
       id: user.id,
       email: user.email,
       role_name: user.role.name, // ✅ dùng role name để middleware đọc

@@ -88,6 +88,12 @@ Shipment.belongsTo(Order, { foreignKey: "order_id", as: "order" });
 Dealer.hasMany(Shipment, { foreignKey: "dealer_id", as: "shipments" });
 Order.hasMany(Shipment, { foreignKey: "order_id", as: "shipments" });
 
+// ========== REFRESH TOKENS ==========
+const RefreshTokenM = require("./RefreshToken");
+Customer.hasMany(RefreshTokenM, { foreignKey: "customer_id", as: "refreshTokens" });
+RefreshTokenM.belongsTo(Customer, { foreignKey: "customer_id", as: "customer" });
+
+
 // ========== EXPORT ==========
 module.exports = {
   sequelize,
