@@ -348,7 +348,7 @@ exports.deleteVariant = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy vehicle variant" });
     }
     await variant.destroy();
-    return res.status(204).send();
+    return res.status(204).json({message: "Xóa variant thành công" });
   } catch (err) {
     console.error("Delete variant error:", err);
     return res.status(500).json({ message: "Server error", error: err.message });

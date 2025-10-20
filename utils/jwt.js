@@ -3,8 +3,8 @@ const jwt = require("jsonwebtoken");
 // 🔹 Sinh token chứa role_name
 
 // === CONFIG ===
-// access token hết hạn sau 3 giờ
-const ACCESS_EXPIRE = "3h";
+// access token hết hạn sau 24h
+const ACCESS_EXPIRE = "24h";
 const REFRESH_EXPIRE_DAYS = 7;
 
 exports.ACCESS_EXPIRE = ACCESS_EXPIRE;
@@ -23,7 +23,7 @@ exports.generateTokens = (user) => {
   });
 
   const refreshToken = jwt.sign(
-    { id: user.id },
+    { id: user.id },  
     process.env.JWT_REFRESH_SECRET,
     { expiresIn: `${REFRESH_EXPIRE_DAYS}d` }
   );
