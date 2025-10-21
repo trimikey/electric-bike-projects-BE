@@ -77,7 +77,7 @@ exports.create = async (req, res) => {
       email,
       password_hash,
       phone,
-      role_id: role.id, // ✅ vẫn lưu bằng role_id
+      role_id: role.id, // ✅ vẫn lưu bằng role_id  
     });
 
     res.status(201).json({
