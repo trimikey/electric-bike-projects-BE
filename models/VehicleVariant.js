@@ -38,13 +38,4 @@ const VehicleVariant = sequelize.define(
   }
 );
 
-VehicleModel.hasMany(VehicleVariant, {
-  foreignKey: "model_id",
-  as: "variants",
-});
-VehicleVariant.belongsTo(VehicleModel, {
-  foreignKey: "model_id",
-  as: "model",
-});
-
 module.exports = VehicleVariant;

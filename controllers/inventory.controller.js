@@ -22,7 +22,7 @@ exports.applyInboundToDealer = async (req, res) => {
     for (const alloc of mo.allocations) {
       // deduct manufacturer inventory
       const mi = await ManufacturerInventory.findOne({
-        where: { variant_id: alloc.variant_id },
+        where: { variant_id: alloc.variant_id },  
       });
       if (!mi || mi.quantity < alloc.quantity)
         throw new Error("Insufficient factory inventory");

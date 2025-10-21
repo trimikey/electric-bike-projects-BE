@@ -13,6 +13,10 @@ const VehicleModel = sequelize.define(
       allowNull: false,
       unique: true,
     },
+    manufacturer_id: {
+      type: DataTypes.CHAR(36),
+      allowNull: true,
+    },
     description: {
       type: DataTypes.TEXT,
       allowNull: true,
