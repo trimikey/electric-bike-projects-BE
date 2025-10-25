@@ -16,6 +16,11 @@ const { verifyToken, guard } = require("../middlewares/auth.middleware");
 // ===========================
 // VEHICLE MODELS - CUSTOMER ACCESS
 // ===========================
+router.get(
+  "/models/:id",
+  guard(["Admin", "EVM Staff", "Customer", "Dealer Staff"]),
+  vehicleCtrl.getModelById
+);
 router.get("/models", guard(["Admin", "EVM Staff", "Customer","Dealer Staff"]), vehicleCtrl.listModels);
 router.post("/models", guard(["Admin", "EVM Staff", "Customer","Dealer Staff"]), vehicleCtrl.createModel);
 router.put("/models/:id", guard(["Admin", "EVM Staff", "Customer","Dealer Staff"]), vehicleCtrl.updateModel);
