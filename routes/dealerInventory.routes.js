@@ -14,22 +14,6 @@ router.get(
   controller.list
 );
 
-router.get(
-  "/:id",
-  guard(["Admin", "EVM Staff", "Dealer Manager", "Dealer Staff"]),
-  controller.getById
-);
 
-router.put(
-  "/:id",
-  guard(["Admin", "EVM Staff"]),
-  controller.update
-);
-
-router.delete(
-  "/:id",
-  guard(["Admin"]),
-  controller.remove
-);
 
 module.exports = router;

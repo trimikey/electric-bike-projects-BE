@@ -6,6 +6,11 @@ router.post("/", guard(["Admin", "EVM Staff"]), controller.create);
 router.get("/", guard(["Admin", "EVM Staff"]), controller.list);
 router.get("/:id", guard(["Admin", "EVM Staff"]), controller.getById);
 router.put("/:id", guard(["Admin", "EVM Staff"]), controller.update);
+router.patch(
+  "/:id/status",
+  guard(["Admin", "EVM Staff"]),
+  controller.updateStatus
+);
 router.delete("/:id", guard(["Admin"]), controller.remove);
 
 module.exports = router;
