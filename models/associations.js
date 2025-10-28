@@ -18,7 +18,6 @@ const TestDrive = require("./TestDrive");
 const Complaint = require("./Complaint");
 const Manufacturer = require("./Manufacturer");
 const ManufacturerOrder = require("./ManufacturerOrder");
-const InboundAllocation = require("./InboundAllocation");
 const ManufacturerInventory = require("./ManufacturerInventory");
 const DealerInventory = require("./DealerInventory");
 const VehicleInventory = require("./VehicleInventory");
@@ -73,10 +72,11 @@ Complaint.belongsTo(Order, { foreignKey: "order_id", as: "order" });
 
 // ========== MANUFACTURER ORDERS & ALLOCATIONS ==========
 ManufacturerOrder.belongsTo(Dealer, { foreignKey: "dealer_id", as: "dealer" });
+ManufacturerOrder.belongsTo(Manufacturer, { foreignKey: "manufacturer_id", as: "manufacturer" });
+Manufacturer.hasMany(ManufacturerOrder, { foreignKey: "manufacturer_id", as: "orders" });
 ManufacturerOrder.belongsTo(User, { foreignKey: "created_by", as: "creator" });
-InboundAllocation.belongsTo(ManufacturerOrder, { foreignKey: "manufacturer_order_id", as: "manufacturerOrder" });
-InboundAllocation.belongsTo(VehicleVariant, { foreignKey: "variant_id", as: "variant" });
-ManufacturerOrder.hasMany(InboundAllocation, { foreignKey: "manufacturer_order_id", as: "allocations" });
+ManufacturerOrder.belongsTo(VehicleVariant, { foreignKey: "variant_id", as: "variant" });
+VehicleVariant.hasMany(ManufacturerOrder, { foreignKey: "variant_id", as: "manufacturerOrders" });
 
 // ========== INVENTORY ==========
 ManufacturerInventory.belongsTo(VehicleVariant, { foreignKey: "variant_id", as: "variant" });
@@ -116,7 +116,6 @@ module.exports = {
   Complaint,
   Manufacturer,
   ManufacturerOrder,
-  InboundAllocation,
   ManufacturerInventory,
   DealerInventory,
   VehicleInventory,
