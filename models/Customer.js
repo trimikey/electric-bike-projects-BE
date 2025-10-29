@@ -24,7 +24,7 @@ const Customer = sequelize.define(
     },
     password_hash: {
       type: DataTypes.STRING(255),
-      allowNull: true,  
+      allowNull: true,
     },
     address: {
       type: DataTypes.STRING(255),

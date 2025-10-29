@@ -20,6 +20,8 @@ const manufacturerRoutes = require("./routes/manufacturer.routes");
 const manufacturerOrderRoutes = require("./routes/manufacturerOrder.routes");
 const manufacturerInventoryRoutes = require("./routes/manufacturerInventory.routes");
 const orderRoutes = require("./routes/order.routes");
+const paymentRoutes = require("./routes/payment.routes");
+
 const customerRoutes = require("./routes/customer.route");
 const quoteRoutes = require("./routes/quote.routes");
 
@@ -27,16 +29,17 @@ const quoteRoutes = require("./routes/quote.routes");
 
 const app = express();
 // ✅ Cấu hình CORS chi tiết
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization, Accept");
-  if (req.method === "OPTIONS") return res.sendStatus(204);
-  next();
-});
+// ✅ Chuẩn hóa CORS middleware
+const corsOptions = {
+  origin: "http://localhost:3000", // FE port
+  credentials: true, // Cho phép gửi cookie & Authorization header
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"],
+};
 
-app.use(cors()); // đảm bảo các request thường cũng có CORS
-app.options(/(.*)/, cors()); // preflight
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions)); // ✅ dùng regex, tương thích Express 5+
+
 app.use(express.json());
 
 
@@ -67,9 +70,11 @@ app.use("/manufacturer-orders", manufacturerOrderRoutes);
 app.use("/manufacturer-inventory", manufacturerInventoryRoutes);
 app.use("/dealer-inventory", dealerInventoryRoutes);
 app.use("/orders", orderRoutes);
+app.use("/payments", paymentRoutes);
 app.use("/customers", customerRoutes);
 app.use("/quotes", quoteRoutes);
 app.use(errorHandler);
+
 
 
 (async () => {

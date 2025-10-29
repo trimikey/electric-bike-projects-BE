@@ -16,10 +16,15 @@ const { verifyToken, guard } = require("../middlewares/auth.middleware");
 // ===========================
 // VEHICLE MODELS - CUSTOMER ACCESS
 // ===========================
-router.get("/models", guard(["Admin", "EVM Staff", "Customer"]), vehicleCtrl.listModels);
-router.post("/models", guard(["Admin", "EVM Staff", "Customer"]), vehicleCtrl.createModel);
-router.put("/models/:id", guard(["Admin", "EVM Staff", "Customer"]), vehicleCtrl.updateModel);
-router.delete("/models/:id", guard(["Admin", "Customer"]), vehicleCtrl.deleteModel);
+router.get(
+  "/models/:id",
+  guard(["Admin", "EVM Staff", "Customer", "Dealer Staff"]),
+  vehicleCtrl.getModelById
+);
+router.get("/models", guard(["Admin", "EVM Staff", "Customer","Dealer Staff"]), vehicleCtrl.listModels);
+router.post("/models", guard(["Admin", "EVM Staff", "Customer","Dealer Staff"]), vehicleCtrl.createModel);
+router.put("/models/:id", guard(["Admin", "EVM Staff", "Customer","Dealer Staff"]), vehicleCtrl.updateModel);
+router.delete("/models/:id", guard(["Admin", "Customer","Dealer Staff"]), vehicleCtrl.deleteModel);
 
 
 
@@ -37,9 +42,9 @@ router.delete("/models/:id", guard(["Admin", "Customer"]), vehicleCtrl.deleteMod
 // ===========================
 // VEHICLE VARIANTS - CUSTOMER ACCESS
 // ===========================
-router.get("/variants", guard(["Admin", "EVM Staff", "Customer"]), vehicleCtrl.listVariants);
+router.get("/variants", guard(["Admin", "EVM Staff", "Customer","Dealer Staff"]), vehicleCtrl.listVariants);
 router.post("/variants", guard(["Admin", "EVM Staff", "Customer"]), vehicleCtrl.createVariant);
-router.get("/variants/:id", guard(["Admin", "EVM Staff", "Customer"]), vehicleCtrl.getVariant);
+router.get("/variants/:id", guard(["Admin", "EVM Staff", "Customer","Dealer Staff"]), vehicleCtrl.getVariant);
 router.put("/variants/:id", guard(["Admin", "EVM Staff", "Customer"]), vehicleCtrl.updateVariant);
 router.delete("/variants/:id", guard(["Admin", "Customer"]), vehicleCtrl.deleteVariant);
 

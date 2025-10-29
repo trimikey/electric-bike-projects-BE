@@ -6,10 +6,10 @@ const { guard } = require("../middlewares/auth.middleware");
 // ===========================
 // CUSTOMER ROUTES
 // ===========================
-routeCustomer.post("/", guard(["Admin", "EVM Staff"]), ctrlC.createCustomer);
-routeCustomer.get("/", guard(["Admin", "EVM Staff"]), ctrlC.listCustomers);
-routeCustomer.get("/me", guard(["Admin", "EVM Staff", "Customer"]), ctrlC.getCurrentCustomer);
-routeCustomer.put("/:id", guard(["Admin", "EVM Staff", "Customer"]), ctrlC.updateCustomer);
-routeCustomer.delete("/:id", guard(["Admin"]), ctrlC.deleteCustomer);
+routeCustomer.post("/", guard(["Admin", "EVM Staff","Dealer Staff"]), ctrlC.createCustomer);
+routeCustomer.get("/", guard(["Admin", "EVM Staff","Dealer Staff"]), ctrlC.listCustomers);
+routeCustomer.get("/me", guard(["Admin", "EVM Staff", "Customer","Dealer Staff"]), ctrlC.getCurrentCustomer);
+routeCustomer.put("/:id", guard(["Admin", "EVM Staff", "Customer","Dealer Staff"]), ctrlC.updateCustomer);
+routeCustomer.delete("/:id", guard(["Admin","Dealer Staff"]), ctrlC.deleteCustomer);
 
 module.exports = routeCustomer;
