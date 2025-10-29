@@ -8,4 +8,18 @@ routerOrder.post("/pay", guard(["Dealer Staff", "Dealer Manager", "Admin"]), ctr
 routerOrder.post("/shipment", guard(["Dealer Staff", "Dealer Manager", "Admin"]), ctrlO.createShipment);
 routerOrder.post("/shipment/delivered", guard(["Dealer Staff", "Dealer Manager", "Admin"]), ctrlO.markDelivered);
 
+
+// 🔹 Dealer hoặc Customer có thể tạo đơn
+routerOrder.post("/", guard(["Customer", "Dealer Manager", "Dealer Staff"]), ctrlO.create);
+
+// 🔹 Lấy tất cả đơn (Admin hoặc Dealer)
+routerOrder.get("/", guard(["Admin", "Dealer Manager", "Dealer Staff"]), ctrlO.listAll);
+
+// 🔹 Cập nhật trạng thái đơn hàng
+routerOrder.put("/:id/status", guard(["Dealer Manager", "Admin"]), ctrlO.updateStatus);
+
+// 🔹 Xoá đơn hàng
+routerOrder.delete("/:id", guard(["Admin"]), ctrlO.remove);
+
+
 module.exports = routerOrder;

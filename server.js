@@ -17,6 +17,8 @@ const dealerRoutes = require("./routes/dealer.routes");
 const inventoryRoutes = require("./routes/inventory.routes");
 const dealerInventoryRoutes = require("./routes/dealerInventory.routes");
 const orderRoutes = require("./routes/order.routes");
+const paymentRoutes = require("./routes/payment.routes");
+
 const customerRoutes = require("./routes/customer.route");
 const quoteRoutes = require("./routes/quote.routes");
 
@@ -62,9 +64,11 @@ app.use("/dealers", dealerRoutes);
 app.use("/inventory", inventoryRoutes);
 app.use("/dealer-inventory", dealerInventoryRoutes);
 app.use("/orders", orderRoutes);
+app.use("/payments", paymentRoutes);
 app.use("/customers", customerRoutes);
 app.use("/quotes", quoteRoutes);
 app.use(errorHandler);
+
 
 
 (async () => {

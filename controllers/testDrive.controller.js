@@ -1,16 +1,14 @@
 const { v4: uuidv4 } = require("uuid");
 const { TestDrive } = require("../models");
+const {  Customer, Dealer, VehicleModel, User } = require("../models");
+
 
 // ==================== CREATE ====================
 exports.schedule = async (req, res) => {
   try {
     const { customer_id, dealer_id, vehicle_model_id, staff_id, schedule_at, notes } = req.body;
 
-    if (!customer_id || !dealer_id || !vehicle_model_id || !schedule_at) {
-      return res.status(400).json({ message: "Thiếu dữ liệu bắt buộc." });
-    }
-
-    const testDrive = await TestDrive.create({
+    const td = await TestDrive.create({
       id: uuidv4(),
       customer_id,
       dealer_id,
@@ -21,30 +19,35 @@ exports.schedule = async (req, res) => {
       notes,
     });
 
-    res.status(201).json({
-      message: "Tạo lịch lái thử thành công",
-      data: testDrive,
+    const result = await TestDrive.findByPk(td.id, {
+      include: [
+        { model: Customer, as: "customer", attributes: ["id", "full_name", "phone", "email"] },
+        { model: Dealer, as: "dealer", attributes: ["id", "name", "address", "phone"] },
+        { model: VehicleModel, as: "vehicleModel", attributes: ["id", "name"] },
+        { model: User, as: "staff", attributes: ["id", "username", "email"] },
+      ],
     });
+
+    res.status(201).json(result);
   } catch (err) {
-    console.error("❌ Lỗi tạo lịch lái thử:", err);
-    res.status(500).json({ message: "Lỗi server", error: err.message });
+    console.error(err);
+    res.status(500).json({ message: err.message });
   }
 };
 
-// ==================== LIST ALL ====================
+// ✅ Lấy tất cả lịch lái thử
 exports.listAll = async (req, res) => {
   try {
-    const { dealer_id, status } = req.query;
-    const where = {};
-    if (dealer_id) where.dealer_id = dealer_id;
-    if (status) where.status = status;
-
-    const list = await TestDrive.findAll({
-      where,
-      order: [["schedule_at", "DESC"]],
+    const testDrives = await TestDrive.findAll({
+      include: [
+        { model: Customer, as: "customer", attributes: ["id", "full_name", "phone", "email"] },
+        { model: Dealer, as: "dealer", attributes: ["id", "name", "address", "phone"] },
+        { model: VehicleModel, as: "vehicleModel", attributes: ["id", "name"] },
+        { model: User, as: "staff", attributes: ["id", "username", "email"] },
+      ],
+      order: [["createdAt", "DESC"]],
     });
-
-    res.json(list);
+    res.json(testDrives);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

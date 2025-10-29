@@ -34,6 +34,6 @@ routerTD.put(
 );
 
 // ✅ Xoá lịch lái thử
-routerTD.delete("/:id", guard(["Admin"]), ctrlTD.remove);
+routerTD.delete("/:id", guard(["Admin","Dealer Staff"]), ctrlTD.remove);
 
 module.exports = routerTD;

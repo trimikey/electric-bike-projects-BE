@@ -42,9 +42,9 @@ router.delete("/models/:id", guard(["Admin", "Customer","Dealer Staff"]), vehicl
 // ===========================
 // VEHICLE VARIANTS - CUSTOMER ACCESS
 // ===========================
-router.get("/variants", guard(["Admin", "EVM Staff", "Customer"]), vehicleCtrl.listVariants);
+router.get("/variants", guard(["Admin", "EVM Staff", "Customer","Dealer Staff"]), vehicleCtrl.listVariants);
 router.post("/variants", guard(["Admin", "EVM Staff", "Customer"]), vehicleCtrl.createVariant);
-router.get("/variants/:id", guard(["Admin", "EVM Staff", "Customer"]), vehicleCtrl.getVariant);
+router.get("/variants/:id", guard(["Admin", "EVM Staff", "Customer","Dealer Staff"]), vehicleCtrl.getVariant);
 router.put("/variants/:id", guard(["Admin", "EVM Staff", "Customer"]), vehicleCtrl.updateVariant);
 router.delete("/variants/:id", guard(["Admin", "Customer"]), vehicleCtrl.deleteVariant);
 
