@@ -171,7 +171,7 @@ exports.listAll = async (req, res) => {
           include: [
             {
               model: VehicleModel,
-              as: "model",
+              as: "vehicleModel", // ✅ đúng alias ở association
               attributes: ["name", "description"],
             },
           ],
@@ -187,6 +187,7 @@ exports.listAll = async (req, res) => {
     res.status(500).json({ message: "Lỗi khi lấy danh sách đơn hàng" });
   }
 };
+
 
 // ================== UPDATE STATUS ==================
 exports.updateStatus = async (req, res) => {
