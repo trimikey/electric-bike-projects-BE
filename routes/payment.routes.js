@@ -11,4 +11,6 @@ router.get("/", paymentController.listPayments);
 // ✅ IPN callback từ MoMo
 router.post("/momo/notify", paymentController.momoIPN);
 
+router.post("/momo/verify", paymentController.verifyMomo);
+
 module.exports = router;

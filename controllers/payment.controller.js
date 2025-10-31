@@ -70,3 +70,26 @@ exports.momoIPN = async (req, res) => {
     res.status(500).json({ message: "Lỗi xử lý IPN từ MoMo" });
   }
 };
+// controllers/payment.controller.js
+
+exports.verifyMomo = async (req, res) => {
+  try {
+    const { orderId, requestId, realOrderId } = req.body;
+    if (!orderId || !requestId || !realOrderId) {
+      return res.status(400).json({ message: "Thiếu orderId/requestId/realOrderId" });
+    }
+
+    const result = await momoController.queryAndUpdateByMoMoIds({
+      momoOrderId: orderId,
+      requestId,
+      realOrderId,
+    });
+
+    if (result.ok) return res.json({ message: "Đã xác nhận thanh toán", data: result.data });
+    return res.status(400).json({ message: "Thanh toán chưa xác nhận", data: result.data });
+  } catch (e) {
+    console.error("verifyMomo error:", e.message);
+    res.status(500).json({ message: "Lỗi verify MoMo" });
+  }
+};
+

@@ -21,6 +21,7 @@ const paymentRoutes = require("./routes/payment.routes");
 
 const customerRoutes = require("./routes/customer.route");
 const quoteRoutes = require("./routes/quote.routes");
+const errorMiddleware = require("./middlewares/error.middleware");
 
     
 
@@ -69,6 +70,7 @@ app.use("/customers", customerRoutes);
 app.use("/quotes", quoteRoutes);
 app.use(errorHandler);
 
+app.use(errorMiddleware);
 
 
 (async () => {
