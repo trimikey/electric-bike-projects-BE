@@ -535,3 +535,24 @@ exports.attachSpec = async (req, res) => {
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+exports.getModelById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const model = await VehicleModel.findByPk(id, {
+      include: [
+        { model: VehicleVariant, as: "variants" },
+        {
+          model: VehicleModelSpec,
+          as: "modelSpecs",
+          include: [{ model: Spec, as: "spec" }],
+        },
+      ],
+    });
+
+    if (!model) return res.status(404).json({ message: "Không tìm thấy model" });
+    res.json(model);
+  } catch (err) {
+    console.error("Get model error:", err);
+    res.status(500).json({ message: err.message });
+  }
+};

@@ -8,6 +8,9 @@ const {
     DealerInventory,
     VehicleInventory,
     VehicleVariant,
+    Dealer,
+    Customer,
+    VehicleModel
 } = require("../models");
 
 
@@ -111,4 +114,112 @@ const order = await Order.findByPk(ship.order_id);
 if (order) await order.update({ status: "delivered" });
 }
 res.json({ message: "Delivered" });
+};
+
+
+const { v4: uuidv4 } = require("uuid");
+
+// ================== CREATE ORDER ==================
+exports.create = async (req, res) => {
+  try {
+    const { customer_id, dealer_id, variant_id, total_amount, payment_method } = req.body;
+
+    if (!customer_id || !dealer_id || !variant_id || !total_amount || !payment_method)
+      return res.status(400).json({ message: "Thiếu thông tin đặt hàng" });
+
+    // 🔹 Tạo đơn hàng
+    const newOrder = await Order.create({
+      id: uuidv4(),
+      customer_id,
+      dealer_id,
+      variant_id,
+      total_amount,
+      status: "pending",
+    });
+
+    // 🔹 Tạo record thanh toán (chưa thanh toán)
+    const payment = await Payment.create({
+      id: uuidv4(),
+      order_id: newOrder.id,
+      amount: total_amount,
+      method: payment_method,
+    });
+
+    return res.status(201).json({
+      message: "Tạo đơn hàng thành công",
+      order: newOrder,
+      payment,
+    });
+  } catch (error) {
+    console.error("❌ create order error:", error);
+    res.status(500).json({ message: "Lỗi server khi tạo đơn hàng" });
+  }
+};
+
+// ================== GET ALL ==================
+// ================== GET ALL ==================
+exports.listAll = async (req, res) => {
+  try {
+    const orders = await Order.findAll({
+      include: [
+        { model: Customer, as: "customer", attributes: ["full_name", "email", "phone"] },
+        { model: Dealer, as: "dealer", attributes: ["name"] },
+        {
+          model: VehicleVariant,
+          as: "variant",
+          attributes: ["version", "color", "base_price"],
+          include: [
+            {
+              model: VehicleModel,
+              as: "vehicleModel", // ✅ đúng alias ở association
+              attributes: ["name", "description"],
+            },
+          ],
+        },
+        { model: Payment, as: "payments", attributes: ["method", "amount", "paid_at"] },
+      ],
+      order: [["order_date", "DESC"]],
+    });
+
+    res.json(orders);
+  } catch (err) {
+    console.error("❌ Lỗi khi lấy danh sách đơn hàng:", err);
+    res.status(500).json({ message: "Lỗi khi lấy danh sách đơn hàng" });
+  }
+};
+
+
+// ================== UPDATE STATUS ==================
+exports.updateStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const validStatuses = ["pending", "confirmed", "shipped", "delivered", "cancelled"];
+    if (!validStatuses.includes(status))
+      return res.status(400).json({ message: "Trạng thái không hợp lệ" });
+
+    const order = await Order.findByPk(id);
+    if (!order) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+
+    await order.update({ status });
+    res.json({ message: "Cập nhật trạng thái thành công", order });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi cập nhật trạng thái đơn hàng" });
+  }
+};
+
+// ================== DELETE ORDER ==================
+exports.remove = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const order = await Order.findByPk(id);
+    if (!order) return res.status(404).json({ message: "Không tìm thấy đơn hàng" });
+
+    await Payment.destroy({ where: { order_id: id } });
+    await order.destroy();
+
+    res.json({ message: "Đã xoá đơn hàng và thanh toán liên quan" });
+  } catch (error) {
+    res.status(500).json({ message: "Lỗi khi xoá đơn hàng" });
+  }
 };
