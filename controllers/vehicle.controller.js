@@ -5,6 +5,7 @@ const {
   VehicleVariant,
   Spec,
   VehicleModelSpec,
+  Manufacturer,
 } = require("../models");
 
 // ==========================
@@ -12,8 +13,12 @@ const {
 // ==========================
 exports.createModel = async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, description, manufacturer_id } = req.body;
     const trimmedName = typeof name === "string" ? name.trim() : "";
+    const trimmedManufacturerId =
+      typeof manufacturer_id === "string" && manufacturer_id.trim()
+        ? manufacturer_id.trim()
+        : null;
 
     if (!trimmedName)
       return res.status(400).json({ message: "Tên dòng xe (name) là bắt buộc" });
@@ -22,13 +27,35 @@ exports.createModel = async (req, res) => {
     if (existed)
       return res.status(400).json({ message: "Vehicle model đã tồn tại với tên này" });
 
+    if (trimmedManufacturerId) {
+      const manufacturer = await Manufacturer.findByPk(trimmedManufacturerId);
+      if (!manufacturer) {
+        return res.status(400).json({ message: "Manufacturer không tồn tại" });
+      }
+    }
+
     const model = await VehicleModel.create({
       id: uuidv4(),
       name: trimmedName,
+      manufacturer_id: trimmedManufacturerId,
       description: typeof description === "string" ? description.trim() : description,
     });
 
-    return res.status(201).json({ message: "Tạo vehicle model thành công", model });
+    const payload = await VehicleModel.findByPk(model.id, {
+      include: [
+        { model: Manufacturer, as: "manufacturer" },
+        { model: VehicleVariant, as: "variants" },
+        {
+          model: VehicleModelSpec,
+          as: "modelSpecs",
+          include: [{ model: Spec, as: "spec" }],
+        },
+      ],
+    });
+
+    return res
+      .status(201)
+      .json({ message: "Tạo vehicle model thành công", model: payload });
   } catch (err) {
     console.error("Create model error:", err);
     return res.status(500).json({ message: "Server error", error: err.message });
@@ -42,6 +69,7 @@ exports.listModels = async (_req, res) => {
   try {
     const models = await VehicleModel.findAll({
       include: [
+        { model: Manufacturer, as: "manufacturer" },
         { model: VehicleVariant, as: "variants" },
         {
           model: VehicleModelSpec,
@@ -68,7 +96,7 @@ exports.listModels = async (_req, res) => {
 exports.updateModel = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description } = req.body;
+    const { name, description, manufacturer_id } = req.body;
 
     const model = await VehicleModel.findByPk(id);
     if (!model) {
@@ -96,10 +124,30 @@ exports.updateModel = async (req, res) => {
         typeof description === "string" ? description.trim() : description;
     }
 
+    if (manufacturer_id !== undefined) {
+      const normalizedId =
+        manufacturer_id === null || manufacturer_id === ""
+          ? null
+          : typeof manufacturer_id === "string"
+          ? manufacturer_id.trim()
+          : manufacturer_id;
+
+      if (normalizedId) {
+        const manufacturer = await Manufacturer.findByPk(normalizedId);
+        if (!manufacturer) {
+          return res.status(400).json({ message: "Manufacturer không tồn tại" });
+        }
+        model.manufacturer_id = normalizedId;
+      } else {
+        model.manufacturer_id = null;
+      }
+    }
+
     await model.save();
 
     const payload = await VehicleModel.findByPk(model.id, {
       include: [
+        { model: Manufacturer, as: "manufacturer" },
         { model: VehicleVariant, as: "variants" },
         {
           model: VehicleModelSpec,

@@ -16,6 +16,7 @@ const Payment = require("./Payment");
 const Promotion = require("./Promotion");
 const TestDrive = require("./TestDrive");
 const Complaint = require("./Complaint");
+const Manufacturer = require("./Manufacturer");
 const ManufacturerOrder = require("./ManufacturerOrder");
 const InboundAllocation = require("./InboundAllocation");
 const ManufacturerInventory = require("./ManufacturerInventory");
@@ -33,7 +34,9 @@ User.hasMany(Dealer, { foreignKey: "manager_id", as: "managedDealers" });
 
 // ========== VEHICLE MODELS & VARIANTS ==========
 VehicleVariant.belongsTo(VehicleModel, { foreignKey: "model_id", as: "vehicleModel" });
-VehicleModel.hasMany(VehicleVariant, { foreignKey: "model_id", as: "vehicleVariants" });
+VehicleModel.hasMany(VehicleVariant, { foreignKey: "model_id", as: "variants" });
+Manufacturer.hasMany(VehicleModel, { foreignKey: "manufacturer_id", as: "vehicleModels" });
+VehicleModel.belongsTo(Manufacturer, { foreignKey: "manufacturer_id", as: "manufacturer" });
 
 // ========== SPECS ==========
 VehicleModelSpec.belongsTo(VehicleModel, { foreignKey: "model_id", as: "vehicleModel" });
@@ -111,6 +114,7 @@ module.exports = {
   Promotion,
   TestDrive,
   Complaint,
+  Manufacturer,
   ManufacturerOrder,
   InboundAllocation,
   ManufacturerInventory,
