@@ -8,4 +8,10 @@ router.get("/:id", guard(["Admin", "EVM Staff"]), controller.getById);
 router.put("/:id", guard(["Admin", "EVM Staff"]), controller.update);
 router.delete("/:id", guard(["Admin"]), controller.remove);
 
+router.patch(
+  "/:id/status",
+  guard(["Admin", "EVM Staff"]),
+  controller.updateStatus
+);
+
 module.exports = router;
