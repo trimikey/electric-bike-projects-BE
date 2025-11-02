@@ -33,6 +33,27 @@ routerTD.put(
   ctrlTD.updateStatus
 );
 
+// routes/testDrive.routes.js
+
+// ... các route cũ giữ nguyên
+
+// ✅ Cập nhật từng phần lịch lái thử
+routerTD.patch(
+  "/:id",
+  guard(["Dealer Staff", "Dealer Manager", "Admin"]),
+  ctrlTD.updateOne
+);  
+
+// ✅ Sửa nhanh ghi chú
+routerTD.patch(
+  "/:id/notes",
+  guard(["Dealer Staff", "Dealer Manager", "Admin"]),
+  ctrlTD.updateNotes
+);
+
+module.exports = routerTD;
+
+
 // ✅ Xoá lịch lái thử
 routerTD.delete("/:id", guard(["Admin","Dealer Staff"]), ctrlTD.remove);
 
