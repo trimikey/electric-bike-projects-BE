@@ -103,6 +103,8 @@ exports.payWithMomo = async (req, res) => {
             order_id: order.id,
             amount: order.total_amount,
             method: "momo",
+            status: "pending",      // ✅
+
             paid_at: null, // pending
         });
 

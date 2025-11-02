@@ -5,7 +5,7 @@ const Payment = sequelize.define("payments", {
     order_id: { type: DataTypes.CHAR(36), allowNull: false },
     amount: { type: DataTypes.DECIMAL(15, 2), allowNull: false },
     method: { type: DataTypes.ENUM("cash", "bank_transfer", "installment", "momo", "vnpay"), allowNull: false },
-    paid_at: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+  paid_at: { type: DataTypes.DATE, allowNull: true, defaultValue: null },
     status: {
   type: DataTypes.ENUM("pending", "success", "failed"),
   defaultValue: "pending",
