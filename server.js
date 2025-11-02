@@ -19,6 +19,7 @@ const manufacturerRoutes = require("./routes/manufacturer.routes");
 const manufacturerOrderRoutes = require("./routes/manufacturerOrder.routes");
 const manufacturerInventoryRoutes = require("./routes/manufacturerInventory.routes");
 const orderRoutes = require("./routes/order.routes");
+const shipmentRoutes = require("./routes/shipment.routes");
 const paymentRoutes = require("./routes/payment.routes");
 
 const customerRoutes = require("./routes/customer.route");
@@ -69,6 +70,7 @@ app.use("/manufacturer-orders", manufacturerOrderRoutes);
 app.use("/manufacturer-inventory", manufacturerInventoryRoutes);
 app.use("/dealer-inventory", dealerInventoryRoutes);
 app.use("/orders", orderRoutes);
+app.use("/shipments", shipmentRoutes);
 app.use("/payments", paymentRoutes);
 app.use("/customers", customerRoutes);
 app.use("/quotes", quoteRoutes);
