@@ -65,22 +65,44 @@ exports.createModel = async (req, res) => {
 // ==========================
 // 📗 LIST MODELS (with variants + specs)
 // ==========================
-exports.listModels = async (_req, res) => {
+// ...
+exports.listModels = async (req, res) => {
   try {
+    const { name, manufacturerId, priceMin, priceMax } = req.query;
+
+    const whereModel = {};
+    if (name) whereModel.name = { [Op.like]: `%${name.trim()}%` };
+    if (manufacturerId) whereModel.manufacturer_id = manufacturerId;
+
+    const whereVariant = {};
+    if (priceMin) whereVariant.base_price = { [Op.gte]: Number(priceMin) };
+    if (priceMax) {
+      whereVariant.base_price = {
+        ...(whereVariant.base_price || {}),
+        [Op.lte]: Number(priceMax),
+      };
+    }
+
     const models = await VehicleModel.findAll({
+      where: whereModel,
       include: [
-        { model: Manufacturer, as: "manufacturer" },
-        { model: VehicleVariant, as: "variants" },
+        { model: Manufacturer, as: "manufacturer", attributes: ["id", "name"] },
+        {
+          model: VehicleVariant,
+          as: "variants",
+          attributes: ["id", "version", "color", "base_price", "thumbnail_url", "created_at"],
+          where: Object.keys(whereVariant).length ? whereVariant : undefined,
+          required: false, // vẫn trả model dù chưa có variant
+          separate: true,  // cho phép order riêng trong variants
+          order: [["base_price", "ASC"]],
+        },
         {
           model: VehicleModelSpec,
           as: "modelSpecs",
           include: [{ model: Spec, as: "spec" }],
         },
       ],
-      order: [
-        ["created_at", "DESC"],
-        [{ model: VehicleVariant, as: "variants" }, "created_at", "DESC"],
-      ],
+      order: [["created_at", "DESC"]],
     });
 
     return res.json(models);
@@ -89,6 +111,7 @@ exports.listModels = async (_req, res) => {
     return res.status(500).json({ message: "Server error", error: err.message });
   }
 };
+
 
 // ==========================
 // 🛠️ UPDATE MODEL
@@ -540,6 +563,8 @@ exports.getModelById = async (req, res) => {
     const { id } = req.params;
     const model = await VehicleModel.findByPk(id, {
       include: [
+                { model: Manufacturer, as: "manufacturer", attributes: ["id", "name"] },
+
         { model: VehicleVariant, as: "variants" },
         {
           model: VehicleModelSpec,

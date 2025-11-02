@@ -8,7 +8,7 @@ const { guard } = require("../middlewares/auth.middleware");
 // ✅ Tạo lịch lái thử
 routerTD.post(
   "/schedule",
-  guard(["Dealer Staff", "Dealer Manager", "Admin"]),
+  guard(["Dealer Staff", "Dealer Manager", "Admin","Customer"]),
   ctrlTD.schedule
 );
 

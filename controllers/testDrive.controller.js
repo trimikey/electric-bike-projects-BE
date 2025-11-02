@@ -3,20 +3,75 @@ const { TestDrive } = require("../models");
 const {  Customer, Dealer, VehicleModel, User } = require("../models");
 
 
-// ==================== CREATE ====================
+  // ==================== CREATE ====================
+ // controllers/testDrive.controller.js
+
+
 exports.schedule = async (req, res) => {
   try {
-    const { customer_id, dealer_id, vehicle_model_id, staff_id, schedule_at, notes } = req.body;
+    // FE có thể không gửi customer_id -> ưu tiên lấy từ token
+    let {
+      customer_id,    // optional
+      dealer_id,
+      vehicle_model_id,
+      staff_id,
+      schedule_at,
+      notes,
+    } = req.body;
+
+    // ✅ Lấy customer_id từ token nếu FE không gửi
+    if (!customer_id) {
+      if (req.user?.customer_id) {
+        customer_id = req.user.customer_id;
+      } else if (req.user?.email) {
+        const c = await Customer.findOne({ where: { email: req.user.email } });
+        if (c) customer_id = c.id;
+      }
+    }
+
+    // ---- Validate input cơ bản
+    if (!customer_id) return res.status(400).json({ message: "Không xác định được khách hàng" });
+    if (!dealer_id) return res.status(400).json({ message: "Thiếu dealer_id" });
+    if (!vehicle_model_id) return res.status(400).json({ message: "Thiếu vehicle_model_id" });
+    if (!schedule_at) return res.status(400).json({ message: "Thiếu schedule_at" });
+
+    // ---- Kiểm tra khóa ngoại tồn tại
+    const [customer, dealer, model] = await Promise.all([
+      Customer.findByPk(customer_id),
+      Dealer.findByPk(dealer_id),
+      VehicleModel.findByPk(vehicle_model_id),
+    ]);
+    if (!customer) return res.status(404).json({ message: "Khách hàng không tồn tại" });
+    if (!dealer) return res.status(404).json({ message: "Đại lý không tồn tại" });
+    if (!model) return res.status(404).json({ message: "Dòng xe không tồn tại" });
+
+    // ---- Chuẩn hóa thời gian
+    const dt = new Date(schedule_at);
+    if (isNaN(dt.getTime())) {
+      return res.status(400).json({ message: "schedule_at không hợp lệ" });
+    }
+
+    // (tuỳ chọn) Chống trùng lịch trong ~30 phút cùng KH
+    // const thirtyMin = 30 * 60 * 1000;
+    // const clash = await TestDrive.findOne({
+    //   where: {
+    //     customer_id,
+    //     schedule_at: {
+    //       [Op.between]: [new Date(dt.getTime() - thirtyMin), new Date(dt.getTime() + thirtyMin)],
+    //     },
+    //   },
+    // });
+    // if (clash) return res.status(400).json({ message: "Bạn đã có lịch gần thời điểm này" });
 
     const td = await TestDrive.create({
       id: uuidv4(),
       customer_id,
       dealer_id,
       vehicle_model_id,
-      staff_id,
-      schedule_at,
+      staff_id: staff_id || null,
+      schedule_at: dt,             // để Date, Sequelize sẽ map sang DATETIME
       status: "scheduled",
-      notes,
+      notes: notes || "",
     });
 
     const result = await TestDrive.findByPk(td.id, {
@@ -28,10 +83,10 @@ exports.schedule = async (req, res) => {
       ],
     });
 
-    res.status(201).json(result);
+    return res.status(201).json(result);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: err.message });
+    return res.status(500).json({ message: err.message });
   }
 };
 
