@@ -7,7 +7,7 @@ const { guard } = require("../middlewares/auth.middleware");
 routerUser.post("/login",  ctrlU.loginUser);
 
 // ✅ CRUD cho Admin, EVM Staff
-routerUser.get("/", guard(["Admin", "EVM Staff"]), ctrlU.list);
+routerUser.get("/", guard(["Admin", "EVM Staff","Dealer Staff","Dealer Manager"]), ctrlU.list);
 // routerUser.post("/", guard(["Admin"]), ctrlU.create);
 routerUser.post("/", ctrlU.create);
 routerUser.put("/:id", guard(["Admin", "EVM Staff"]), ctrlU.update);

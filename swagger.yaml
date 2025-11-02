@@ -5,8 +5,8 @@ info:
   version: 1.0.0
 
 servers:
-  - url: http://localhost:3000
-    description: Local development server (matches default .env)
+  - url: http://localhost:3001
+    description: Local development server (matches default .env PORT)
   - url: http://localhost:5000
     description: Alternate port
 
@@ -39,6 +39,8 @@ tags:
     description: Manage inventory levels at each dealer location
   - name: Orders
     description: Manage dealer orders, payments and shipments
+  - name: Payments
+    description: Manage online payments (MoMo/VNPay) and callbacks
 
 paths:
   ##########################################################
@@ -1353,8 +1355,22 @@ paths:
           required: false
           schema:
             type: string
-            enum: ["pending", "confirmed", "shipped", "completed", "cancelled"]
+            enum: ["pending", "confirmed", "inbounded", "shipped", "completed", "cancelled"]
           description: Filter orders by status
+        - name: manufacturer_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter orders by manufacturer id
+        - name: variant_id
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uuid
+          description: Filter orders by vehicle variant id
         - name: created_by
           in: query
           required: false
@@ -1382,7 +1398,7 @@ paths:
       tags:
         - Manufacturer Orders
       summary: Create a manufacturer order
-      description: Requires Admin or EVM Staff role
+      description: Requires Admin or EVM Staff role. Provide dealer, manufacturer inventory, variant and quantity to generate the order; the backend derives manufacturer and pricing from the inventory entry.
       security:
         - bearerAuth: []
       requestBody:
@@ -1397,7 +1413,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ManufacturerOrderDetail"
+                $ref: "#/components/schemas/ManufacturerOrderCreateResponse"
         "400":
           description: Invalid request payload
         "401":
@@ -1541,7 +1557,7 @@ paths:
       tags:
         - Manufacturer Inventory
       summary: Create a manufacturer inventory entry
-      description: Requires Admin or EVM Staff role
+      description: Requires Admin or EVM Staff role. Provide `manufacturer_id`, `variant_id` and `unit_price`; quantity defaults to 0 when omitted.
       security:
         - bearerAuth: []
       requestBody:
@@ -2040,6 +2056,141 @@ paths:
   ##########################################################
   #                   ORDERS
   ##########################################################
+  /orders:
+    post:
+      tags:
+        - Orders
+      summary: Tạo đơn hàng thủ công
+      description: Customer, Dealer Manager hoặc Dealer Staff có thể tạo đơn hàng mới.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderCreateRequest"
+            example:
+              customer_id: "11111111-1111-1111-1111-111111111111"
+              dealer_id: "22222222-2222-2222-2222-222222222222"
+              variant_id: "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+              total_amount: 3250.5
+              payment_method: momo
+      responses:
+        "201":
+          description: Tạo đơn hàng thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderCreateResponse"
+        "400":
+          description: Thiếu thông tin đặt hàng
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Lỗi server
+
+    get:
+      tags:
+        - Orders
+      summary: Lấy danh sách đơn hàng
+      description: Admin, Dealer Manager, Dealer Staff được phép xem.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Danh sách đơn hàng
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrderWithRelations"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Lỗi server
+
+  /orders/{id}/status:
+    put:
+      tags:
+        - Orders
+      summary: Cập nhật trạng thái đơn hàng
+      description: Chỉ Dealer Manager hoặc Admin có quyền thay đổi trạng thái.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID của đơn hàng cần cập nhật
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderStatusUpdateRequest"
+            example:
+              status: confirmed
+      responses:
+        "200":
+          description: Cập nhật thành công
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderStatusUpdateResponse"
+        "400":
+          description: Trạng thái không hợp lệ
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Không tìm thấy đơn hàng
+        "500":
+          description: Lỗi server
+
+  /orders/{id}:
+    delete:
+      tags:
+        - Orders
+      summary: Xoá đơn hàng
+      description: Chỉ Admin có thể xoá đơn hàng và các thanh toán liên quan.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: ID đơn hàng cần xoá
+      responses:
+        "200":
+          description: Đơn hàng đã được xoá
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+              example:
+                message: Đã xoá đơn hàng và thanh toán liên quan
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Không tìm thấy đơn hàng
+        "500":
+          description: Lỗi server
+
   /orders/from-quote:
     post:
       tags:
@@ -2197,6 +2348,92 @@ paths:
           description: Shipment not found
         "500":
           description: Server error
+
+  ##########################################################
+  #                   PAYMENTS
+  ##########################################################
+  /payments:
+    get:
+      tags:
+        - Payments
+      summary: List recorded payments
+      description: Returns the most recent payment records together with their related orders.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Payment list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentListResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "500":
+          description: Server error when loading payments
+
+  /payments/momo:
+    post:
+      tags:
+        - Payments
+      summary: Create a MoMo payment session
+      description: Provide the order you want to pay for and the gateway method (currently `momo` or `vnpay`). The backend proxies to the provider and returns the redirect URL. Customers and dealer staff can trigger this endpoint.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MomoPaymentRequest"
+            example:
+              order_id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+              method: momo
+      responses:
+        "201":
+          description: Payment session created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MomoPaymentCreateResponse"
+        "400":
+          description: Missing input, unsupported method, or provider error
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Order not found
+        "500":
+          description: Server error while creating the session
+
+  /payments/momo/notify:
+    post:
+      tags:
+        - Payments
+      summary: Receive MoMo IPN callbacks
+      description: MoMo calls this URL; it will validate the signature and update the payment/order.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MomoIPNPayload"
+      responses:
+        "200":
+          description: Callback acknowledged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+              example:
+                message: Thanh toán thành công
+        "400":
+          description: Invalid signature or payment failure
+        "500":
+          description: Server error while processing the callback
 
 components:
   securitySchemes:
@@ -3333,17 +3570,29 @@ components:
     ##########################################################
     #               MANUFACTURER ORDERS
     ##########################################################
-    ManufacturerOrderAllocation:
+    ManufacturerOrderCreateRequest:
       type: object
+      required:
+        - dealer_id
+        - manufacturerInventory_id
+        - variant_id
+        - quantity
       properties:
-        id:
+        dealer_id:
           type: string
           format: uuid
-          example: "a1b2c3d4-5678-90ab-cdef-112233445566"
-        manufacturer_order_id:
+          example: "22222222-2222-2222-2222-222222222222"
+        created_by:
           type: string
           format: uuid
-          example: "88888888-8888-8888-8888-888888888888"
+          nullable: true
+          description: >
+            Optional when using Swagger. If omitted, the authenticated user's id is used.
+          example: "11111111-1111-1111-1111-111111111111"
+        manufacturerInventory_id:
+          type: string
+          format: uuid
+          example: "44444444-4444-4444-4444-444444444444"
         variant_id:
           type: string
           format: uuid
@@ -3352,38 +3601,6 @@ components:
           type: integer
           minimum: 1
           example: 20
-        allocated_at:
-          type: string
-          format: date-time
-          example: "2024-10-15T03:20:00.000Z"
-        variant:
-          $ref: "#/components/schemas/VehicleVariantDetail"
-
-    ManufacturerOrderAllocationInput:
-      type: object
-      required:
-        - variant_id
-        - quantity
-      properties:
-        variant_id:
-          type: string
-          format: uuid
-          example: "33333333-3333-3333-3333-333333333333"
-        quantity:
-          type: integer
-          minimum: 1
-          example: 15
-
-    ManufacturerOrderCreateRequest:
-      type: object
-      required:
-        - dealer_id
-        - allocations
-      properties:
-        dealer_id:
-          type: string
-          format: uuid
-          example: "22222222-2222-2222-2222-222222222222"
         expected_delivery:
           type: string
           format: date
@@ -3396,20 +3613,20 @@ components:
         status:
           type: string
           nullable: true
-          enum: ["pending", "confirmed", "shipped", "completed", "cancelled"]
+          enum: ["pending", "confirmed", "inbounded", "shipped", "completed", "cancelled"]
           example: "pending"
-        allocations:
-          type: array
-          items:
-            $ref: "#/components/schemas/ManufacturerOrderAllocationInput"
+      example:
+        dealer_id: "22222222-2222-2222-2222-222222222222"
+        manufacturerInventory_id: "44444444-4444-4444-4444-444444444444"
+        variant_id: "33333333-3333-3333-3333-333333333333"
+        quantity: 20
+        expected_delivery: "2025-01-15"
+        notes: "Lô xe phục vụ khai trương showroom mới"
+        status: pending
 
     ManufacturerOrderUpdateRequest:
       type: object
       properties:
-        dealer_id:
-          type: string
-          format: uuid
-          example: "22222222-2222-2222-2222-222222222222"
         expected_delivery:
           type: string
           format: date
@@ -3422,14 +3639,23 @@ components:
         status:
           type: string
           nullable: true
-          enum: ["pending", "confirmed", "shipped", "completed", "cancelled"]
+          enum: ["pending", "confirmed", "inbounded", "shipped", "completed", "cancelled"]
           example: "confirmed"
-        allocations:
-          type: array
-          description: >
-            Nếu cung cấp, danh sách allocations mới sẽ thay thế toàn bộ allocations hiện tại.
-          items:
-            $ref: "#/components/schemas/ManufacturerOrderAllocationInput"
+        confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-12-21T09:30:00.000Z"
+        shipped_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-12-25T04:15:00.000Z"
+        received_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-01-02T08:45:00.000Z"
 
     ManufacturerOrderDetail:
       type: object
@@ -3442,19 +3668,59 @@ components:
           type: string
           format: uuid
           example: "22222222-2222-2222-2222-222222222222"
+        manufacturer_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        manufacturerInventory_id:
+          type: string
+          format: uuid
+          example: "44444444-4444-4444-4444-444444444444"
+        variant_id:
+          type: string
+          format: uuid
+          example: "33333333-3333-3333-3333-333333333333"
+        quantity:
+          type: integer
+          minimum: 1
+          example: 20
+        total_amount:
+          type: number
+          format: float
+          example: 70000
         created_by:
           type: string
           format: uuid
           example: "11111111-1111-1111-1111-111111111111"
         status:
           type: string
-          enum: ["pending", "confirmed", "shipped", "completed", "cancelled"]
+          enum: ["pending", "confirmed", "inbounded", "shipped", "completed", "cancelled"]
           example: "pending"
         expected_delivery:
           type: string
           format: date
           nullable: true
           example: "2025-01-15"
+        confirmed_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-12-21T09:30:00.000Z"
+        shipped_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2024-12-25T04:15:00.000Z"
+        received_at:
+          type: string
+          format: date-time
+          nullable: true
+          example: "2025-01-02T08:45:00.000Z"
+        received_by:
+          type: string
+          format: uuid
+          nullable: true
+          example: "55555555-5555-5555-5555-555555555555"
         notes:
           type: string
           nullable: true
@@ -3469,6 +3735,10 @@ components:
           example: "2024-12-22T09:20:00.000Z"
         dealer:
           $ref: "#/components/schemas/Dealer"
+        manufacturer:
+          $ref: "#/components/schemas/Manufacturer"
+        variant:
+          $ref: "#/components/schemas/VehicleVariantDetail"
         creator:
           type: object
           nullable: true
@@ -3484,10 +3754,15 @@ components:
               type: string
               format: email
               example: "staff01@evm.vn"
-        allocations:
-          type: array
-          items:
-            $ref: "#/components/schemas/ManufacturerOrderAllocation"
+
+    ManufacturerOrderCreateResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Tạo ManufacturerOrder thành công"
+        order:
+          $ref: "#/components/schemas/ManufacturerOrderDetail"
 
     ##########################################################
     #               MANUFACTURER INVENTORY
@@ -3499,10 +3774,18 @@ components:
           type: string
           format: uuid
           example: "aa11bb22-cc33-dd44-ee55-ff6677889900"
+        manufacturer_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
         variant_id:
           type: string
           format: uuid
           example: "33333333-3333-3333-3333-333333333333"
+        unit_price:
+          type: number
+          format: float
+          example: 3500
         quantity:
           type: integer
           minimum: 0
@@ -3512,18 +3795,31 @@ components:
           format: date-time
           nullable: true
           example: "2024-12-20T08:00:00.000Z"
+        manufacturer:
+          $ref: "#/components/schemas/Manufacturer"
         variant:
           $ref: "#/components/schemas/VehicleVariantDetail"
 
     ManufacturerInventoryCreateRequest:
       type: object
       required:
+        - manufacturer_id
         - variant_id
+        - unit_price
       properties:
+        manufacturer_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
         variant_id:
           type: string
           format: uuid
           example: "33333333-3333-3333-3333-333333333333"
+        unit_price:
+          type: number
+          format: float
+          minimum: 0
+          example: 3500
         quantity:
           type: integer
           minimum: 0
@@ -3531,9 +3827,16 @@ components:
 
     ManufacturerInventoryUpdateRequest:
       type: object
-      required:
-        - quantity
       properties:
+        manufacturer_id:
+          type: string
+          format: uuid
+          example: "11111111-1111-1111-1111-111111111111"
+        unit_price:
+          type: number
+          format: float
+          minimum: 0
+          example: 3600
         quantity:
           type: integer
           minimum: 0
@@ -3620,6 +3923,118 @@ components:
     ##########################################################
     #                   ORDERS
     ##########################################################
+    OrderCreateRequest:
+      type: object
+      required:
+        - customer_id
+        - dealer_id
+        - variant_id
+        - total_amount
+        - payment_method
+      properties:
+        customer_id:
+          type: string
+          format: uuid
+        dealer_id:
+          type: string
+          format: uuid
+        variant_id:
+          type: string
+          format: uuid
+        total_amount:
+          type: number
+          format: float
+        payment_method:
+          type: string
+          description: Phương thức thanh toán ban đầu (momo, vnpay, cash, ...)
+
+    OrderCreateResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Tạo đơn hàng thành công
+        order:
+          $ref: "#/components/schemas/Order"
+        payment:
+          $ref: "#/components/schemas/Payment"
+
+    OrderWithRelations:
+      allOf:
+        - $ref: "#/components/schemas/Order"
+        - type: object
+          properties:
+            customer:
+              type: object
+              properties:
+                full_name:
+                  type: string
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+            dealer:
+              type: object
+              properties:
+                name:
+                  type: string
+            variant:
+              type: object
+              properties:
+                version:
+                  type: string
+                color:
+                  type: string
+                base_price:
+                  type: number
+                  format: float
+                vehicleModel:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    description:
+                      type: string
+                      nullable: true
+            payments:
+              type: array
+              items:
+                type: object
+                properties:
+                  method:
+                    type: string
+                  amount:
+                    type: number
+                    format: float
+                  paid_at:
+                    type: string
+                    format: date-time
+                    nullable: true
+
+    OrderStatusUpdateRequest:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - pending
+            - confirmed
+            - shipped
+            - delivered
+            - cancelled
+
+    OrderStatusUpdateResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Cập nhật trạng thái thành công
+        order:
+          $ref: "#/components/schemas/Order"
+
     OrderFromQuoteRequest:
       type: object
       required:
@@ -3721,7 +4136,9 @@ components:
             - cash
             - bank_transfer
             - installment
-          example: "bank_transfer"
+            - momo
+            - vnpay
+          example: momo
 
     OrderPaymentResponse:
       type: object
@@ -3750,7 +4167,16 @@ components:
             - cash
             - bank_transfer
             - installment
-          example: "bank_transfer"
+            - momo
+            - vnpay
+          example: momo
+        status:
+          type: string
+          enum:
+            - pending
+            - success
+            - failed
+          example: pending
         paid_at:
           type: string
           format: date-time
@@ -3763,6 +4189,113 @@ components:
           type: string
           format: date-time
           example: "2024-10-10T04:20:00.000Z"
+
+    PaymentListResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "✅ Danh sách thanh toán"
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/PaymentWithOrder"
+
+    PaymentWithOrder:
+      allOf:
+        - $ref: "#/components/schemas/Payment"
+        - type: object
+          properties:
+            order:
+              $ref: "#/components/schemas/Order"
+
+    MomoPaymentRequest:
+      type: object
+      required:
+        - order_id
+        - method
+      properties:
+        order_id:
+          type: string
+          format: uuid
+          example: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+        method:
+          type: string
+          enum:
+            - momo
+            - vnpay
+          example: momo
+
+    MomoPaymentCreateResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "✅ Tạo thanh toán MoMo thành công"
+        payUrl:
+          type: string
+          format: uri
+          example: "https://test-payment.momo.vn/pay/..."
+        qrCodeUrl:
+          type: string
+          nullable: true
+          example: "https://test-payment.momo.vn/qrcode/..."
+
+    MomoIPNPayload:
+      type: object
+      required:
+        - amount
+        - extraData
+        - message
+        - orderId
+        - partnerCode
+        - requestId
+        - responseTime
+        - resultCode
+        - signature
+        - transId
+      properties:
+        amount:
+          type: string
+          example: "3250"
+        extraData:
+          type: string
+          description: Contains the real order_id saved during createPayment
+          example: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+        message:
+          type: string
+          example: "Successful."
+        orderId:
+          type: string
+          example: "3f2495d4-f236-4e5f-ab7f-9a6d9d7f292a"
+        partnerCode:
+          type: string
+          example: "MOMO"
+        requestId:
+          type: string
+          example: "d4c11c9f-5f80-4bb7-96f1-97fa3ea94f7c"
+        responseTime:
+          type: string
+          format: date-time
+          example: "2025-01-12T08:15:30.000Z"
+        resultCode:
+          type: integer
+          example: 0
+        signature:
+          type: string
+          example: "ab5c9d..."
+        transId:
+          type: string
+          example: "2600000001"
+        payType:
+          type: string
+          example: "napas"
+        orderInfo:
+          type: string
+          example: "Thanh toán đơn hàng #..."
+        orderType:
+          type: string
+          example: "momo_wallet"
 
     OrderShipmentRequest:
       type: object

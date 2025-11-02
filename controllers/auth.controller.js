@@ -1,30 +1,28 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const admin = require("../config/firebase");
 const { v4: uuidv4 } = require("uuid");
+const { OAuth2Client } = require("google-auth-library"); // ✅ Thay Firebase bằng Google OAuth2
 const Customer = require("../models/Customer");
 const generateTokens = require("../utils/jwt").generateTokens;
 const { User, Role } = require("../models/associations");
-const RefreshToken = require("../models/RefreshToken"); // ✅ Sửa import đúng, không destructure
-const { REFRESH_EXPIRE_DAYS, ACCESS_EXPIRE } = require("../utils/jwt");
+const RefreshToken = require("../models/RefreshToken");
+const { REFRESH_EXPIRE_DAYS } = require("../utils/jwt");
 
+// ⚙️ Tạo OAuth client dùng client ID của Google Cloud
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-
-// 
+// ==================== REGISTER CUSTOMER ====================
 exports.registerCustomer = async (req, res) => {
   try {
     const { full_name, email, password, phone, address, dob } = req.body;
-
-    if (!full_name || !email || !password) {
+    if (!full_name || !email || !password)
       return res
         .status(400)
         .json({ message: "full_name, email và password là bắt buộc" });
-    }
 
     const existed = await Customer.findOne({ where: { email } });
-    if (existed) {
+    if (existed)
       return res.status(400).json({ message: "Email đã được đăng ký" });
-    }
 
     const hashed = await bcrypt.hash(password, 10);
     const customer = await Customer.create({
@@ -39,10 +37,9 @@ exports.registerCustomer = async (req, res) => {
 
     const { accessToken, refreshToken } = generateTokens(customer);
 
-    // ✅ Thêm lưu refresh token gắn với customer_id
     await RefreshToken.create({
       id: uuidv4(),
-      customer_id: customer.id, // ✅ đổi từ user_id sang customer_id
+      customer_id: customer.id,
       token: refreshToken,
       expires_at: new Date(
         Date.now() + Number(REFRESH_EXPIRE_DAYS) * 24 * 60 * 60 * 1000
@@ -51,43 +48,32 @@ exports.registerCustomer = async (req, res) => {
 
     res.status(201).json({
       message: "Đăng ký thành công",
-      customer: {
-        id: customer.id,
-        full_name: customer.full_name,
-        email: customer.email,
-        phone: customer.phone,
-        address: customer.address,
-        dob: customer.dob,
-      },
+      customer,
       accessToken,
       refreshToken,
     });
   } catch (err) {
+    console.error("Register error:", err);
     res.status(500).json({ message: err.message });
   }
 };
 
-// ---------------- LOGIN CUSTOMER ----------------
+// ==================== LOGIN CUSTOMER (email + password) ====================
 exports.loginCustomer = async (req, res) => {
   try {
     const { email, password } = req.body;
-
     const customer = await Customer.findOne({ where: { email } });
     if (!customer)
       return res.status(404).json({ message: "Email không tồn tại" });
 
-    const isValid = await bcrypt.compare(
-      password,
-      customer.password_hash || ""
-    );
+    const isValid = await bcrypt.compare(password, customer.password_hash || "");
     if (!isValid) return res.status(401).json({ message: "Sai mật khẩu" });
 
     const { accessToken, refreshToken } = generateTokens(customer);
 
-    // ✅ Lưu refresh token vào DB (gắn customer_id)
     await RefreshToken.create({
       id: uuidv4(),
-      customer_id: customer.id, // ✅ đổi từ user_id sang customer_id
+      customer_id: customer.id,
       token: refreshToken,
       expires_at: new Date(
         Date.now() + Number(REFRESH_EXPIRE_DAYS) * 24 * 60 * 60 * 1000
@@ -96,27 +82,29 @@ exports.loginCustomer = async (req, res) => {
 
     res.json({
       message: "Đăng nhập thành công",
+      customer,
       accessToken,
       refreshToken,
-      customer: {
-        id: customer.id,
-        full_name: customer.full_name,
-        email: customer.email,
-        phone: customer.phone,
-      },
     });
   } catch (err) {
+    console.error("Login error:", err);
     res.status(500).json({ message: err.message });
   }
 };
 
-// ---------------- GOOGLE LOGIN CUSTOMER ----------------
+// ==================== GOOGLE LOGIN CUSTOMER ====================
 exports.googleLoginCustomer = async (req, res) => {
   const { idToken } = req.body;
   try {
-    const decoded = await admin.auth().verifyIdToken(idToken);
-    const { email, name } = decoded;
+    // ✅ Xác thực ID Token từ FE (NextAuth)
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const { email, name } = payload;
 
+    // 🔍 Tìm hoặc tạo khách hàng mới
     let customer = await Customer.findOne({ where: { email } });
     if (!customer) {
       customer = await Customer.create({
@@ -131,10 +119,9 @@ exports.googleLoginCustomer = async (req, res) => {
 
     const { accessToken, refreshToken } = generateTokens(customer);
 
-    // ✅ Sửa: dùng customer_id thay user_id
     await RefreshToken.create({
       id: uuidv4(),
-      customer_id: customer.id, // ✅ fix
+      customer_id: customer.id,
       token: refreshToken,
       expires_at: new Date(
         Date.now() + Number(REFRESH_EXPIRE_DAYS) * 24 * 60 * 60 * 1000
@@ -143,17 +130,12 @@ exports.googleLoginCustomer = async (req, res) => {
 
     res.json({
       message: "Google login thành công",
-      customer: {
-        id: customer.id,
-        full_name: customer.full_name,
-        email: customer.email,
-        phone: customer.phone,
-      },
+      customer,
       accessToken,
       refreshToken,
     });
   } catch (err) {
-    console.error("❌ Firebase verify failed:", err);
+    console.error("❌ Google verify failed:", err);
     res.status(500).json({
       error: "Google login failed",
       details: err.message || "Unknown",
@@ -161,17 +143,14 @@ exports.googleLoginCustomer = async (req, res) => {
   }
 };
 
-// ---------------- REFRESH TOKEN ---------------- 🆕
+// ==================== REFRESH TOKEN ====================
 exports.refreshTokenCustomer = async (req, res) => {
   try {
     const { refreshToken } = req.body;
     if (!refreshToken)
       return res.status(401).json({ message: "Thiếu refresh token" });
 
-    // ✅ Kiểm tra token có trong DB
-    const stored = await RefreshToken.findOne({
-      where: { token: refreshToken },
-    });
+    const stored = await RefreshToken.findOne({ where: { token: refreshToken } });
     if (!stored)
       return res.status(403).json({ message: "Refresh token không hợp lệ" });
 
@@ -181,7 +160,6 @@ exports.refreshTokenCustomer = async (req, res) => {
       return res.status(404).json({ message: "Không tìm thấy khách hàng" });
 
     const { accessToken: newAccess } = generateTokens(customer);
-
     return res.json({ accessToken: newAccess });
   } catch (err) {
     console.error("Refresh token error:", err);
@@ -189,20 +167,19 @@ exports.refreshTokenCustomer = async (req, res) => {
   }
 };
 
-// ---------------- LOGOUT ----------------
+// ==================== LOGOUT ====================
 exports.logout = async (req, res) => {
   try {
     const { refreshToken } = req.body;
-    if (refreshToken) {
-      await RefreshToken.destroy({ where: { token: refreshToken } }); // ✅ xóa token khỏi DB
-    }
+    if (refreshToken)
+      await RefreshToken.destroy({ where: { token: refreshToken } });
     res.json({ message: "Đăng xuất thành công" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// ---------------- GET PROFILE ----------------
+// ==================== GET PROFILE (for user/admin BE) ====================
 exports.getProfile = async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {
