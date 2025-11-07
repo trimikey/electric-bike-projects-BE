@@ -24,6 +24,7 @@ const paymentRoutes = require("./routes/payment.routes");
 const customerRoutes = require("./routes/customer.route");
 const quoteRoutes = require("./routes/quote.routes");
 const errorMiddleware = require("./middlewares/error.middleware");
+const router = require("./routes/shipment.routes");
 
     
 
@@ -64,6 +65,7 @@ app.use("/vehicles", vehicleRoutes);
 app.use("/test-drives", testDriveRoutes);
 app.use("/complaints", complaintRoutes);
 app.use("/dealers", dealerRoutes);
+app.use("/shipments", router);
 app.use("/manufacturers", manufacturerRoutes);
 app.use("/manufacturer-orders", manufacturerOrderRoutes);
 app.use("/manufacturer-inventory", manufacturerInventoryRoutes);
