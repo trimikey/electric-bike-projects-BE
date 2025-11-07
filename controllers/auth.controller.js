@@ -112,7 +112,7 @@ exports.googleLoginCustomer = async (req, res) => {
         full_name: name || "Khách hàng",
         email,
         phone: null,
-        address: null,
+        address: null,  
         dob: null,
       });
     }

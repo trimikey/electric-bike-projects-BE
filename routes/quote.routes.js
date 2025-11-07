@@ -28,7 +28,7 @@ routerQuote.put(
 
 routerQuote.delete(
   "/:id",
-  guard(["Dealer Manager", "Admin"]),
+  guard(["Dealer Manager","Dealer Staff", "Admin"]),
   ctrlQ.remove
 );
 
