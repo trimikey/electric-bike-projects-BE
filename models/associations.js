@@ -70,7 +70,7 @@ TestDrive.belongsTo(User, { foreignKey: "staff_id", as: "staff" });
 // ======================== COMPLAINTS ============================
 Complaint.belongsTo(Customer, { foreignKey: "customer_id", as: "customer" });
 Complaint.belongsTo(Dealer, { foreignKey: "dealer_id", as: "dealer" });
-Complaint.belongsTo(Order, { foreignKey: "order_id", as: "order" });
+// Complaint.belongsTo(Order, { foreignKey: "order_id", as: "order" });
 
 // ======================== MANUFACTURER ORDERS ==================
 ManufacturerOrder.belongsTo(Dealer, { foreignKey: "dealer_id", as: "dealer" });
