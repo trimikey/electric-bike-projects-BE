@@ -20,6 +20,9 @@ const manufacturerOrderRoutes = require("./routes/manufacturerOrder.routes");
 const manufacturerInventoryRoutes = require("./routes/manufacturerInventory.routes");
 const orderRoutes = require("./routes/order.routes");
 const paymentRoutes = require("./routes/payment.routes");
+const promotionRoutes = require("./routes/promotion.routes");
+const pricingRoutes = require("./routes/pricing.routes");
+const inventoryRoutes = require("./routes/inventory.routes");
 
 const customerRoutes = require("./routes/customer.route");
 const quoteRoutes = require("./routes/quote.routes");
@@ -72,6 +75,9 @@ app.use("/orders", orderRoutes);
 app.use("/payments", paymentRoutes);
 app.use("/customers", customerRoutes);
 app.use("/quotes", quoteRoutes);
+app.use("/promotions", promotionRoutes);
+app.use("/pricing", pricingRoutes);
+app.use("/inventory", inventoryRoutes);
 app.use(errorHandler);
 
 app.use(errorMiddleware);

@@ -2435,6 +2435,201 @@ paths:
         "500":
           description: Server error while processing the callback
 
+  /promotions:
+    get:
+      tags:
+        - Promotions
+      summary: List promotions
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: dealer_id
+          schema:
+            type: string
+        - in: query
+          name: activeOnly
+          schema:
+            type: boolean
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK
+    post:
+      tags:
+        - Promotions
+      summary: Create promotion
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dealer_id:
+                  type: string
+                  nullable: true
+                title:
+                  type: string
+                description:
+                  type: string
+                  nullable: true
+                discount_percent:
+                  type: number
+                  format: float
+                  nullable: true
+                start_date:
+                  type: string
+                  format: date
+                  nullable: true
+                end_date:
+                  type: string
+                  format: date
+                  nullable: true
+              required:
+                - title
+      responses:
+        "201":
+          description: Created
+
+  /promotions/{id}:
+    get:
+      tags:
+        - Promotions
+      summary: Get promotion by id
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+        "404":
+          description: Not found
+    put:
+      tags:
+        - Promotions
+      summary: Update promotion
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: OK
+    delete:
+      tags:
+        - Promotions
+      summary: Delete promotion
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
+
+  /pricing/quote:
+    get:
+      tags:
+        - Pricing
+      summary: Compute final price for dealer and variant
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: dealerId
+          schema:
+            type: string
+        - in: query
+          name: variantId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: date
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: OK
+
+  /inventory/dealers:
+    get:
+      tags:
+        - Inventory
+      summary: List dealer inventories
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: dealerId
+          schema:
+            type: string
+        - in: query
+          name: variantId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+
+  /inventory/dealers/adjust:
+    post:
+      tags:
+        - Inventory
+      summary: Adjust dealer inventory quantity
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                dealerId:
+                  type: string
+                variantId:
+                  type: string
+                delta:
+                  type: integer
+                reason:
+                  type: string
+                  nullable: true
+              required:
+                - dealerId
+                - variantId
+                - delta
+      responses:
+        "200":
+          description: OK
+
 components:
   securitySchemes:
     bearerAuth:
